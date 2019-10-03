@@ -1,0 +1,61 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://symfony.com/schema/dic/services
+                        http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <defaults public="false"/>
+        <service id="jsonapi.field_normalizer.int" class="JsonApi\FieldNormalizer\ScalarFieldNormalizer" autoconfigure="true">
+            <argument type="string">int</argument>
+            <argument type="string">is_int</argument>
+            <argument type="string">intval</argument>
+        </service>
+        <service id="jsonapi.field_normalizer.float" class="JsonApi\FieldNormalizer\ScalarFieldNormalizer" autoconfigure="true">
+            <argument type="string">float</argument>
+            <argument type="string">is_float</argument>
+            <argument type="string">floatval</argument>
+        </service>
+        <service id="jsonapi.field_normalizer.string" class="JsonApi\FieldNormalizer\ScalarFieldNormalizer" autoconfigure="true">
+            <argument type="string">string</argument>
+            <argument type="string">is_string</argument>
+            <argument type="string">strval</argument>
+        </service>
+        <service id="jsonapi.field_normalizer.bool" class="JsonApi\FieldNormalizer\ScalarFieldNormalizer" autoconfigure="true">
+            <argument type="string">bool</argument>
+            <argument type="string">is_bool</argument>
+            <argument type="string">boolval</argument>
+        </service>
+        <service id="jsonapi.field_normalizer.enum" class="JsonApi\FieldNormalizer\EnumFieldNormalizer" autoconfigure="true"/>
+        <service id="jsonapi.field_normalizer.relationship" class="JsonApi\FieldNormalizer\RelationshipFieldNormalizer" autoconfigure="true">
+            <argument type="service" id="JsonApi\Metadata\RegisterInterface"/>
+        </service>
+        <service id="jsonapi.field_normalizer.multiple_relationship" class="JsonApi\FieldNormalizer\MultipleRelationshipFieldNormalizer" autoconfigure="true">
+            <argument type="service" id="JsonApi\Metadata\RegisterInterface"/>
+        </service>
+        <service id="JsonApi\FieldNormalizer\Pool"/>
+        <service id="JsonApi\Parser\MetadataParserFactory">
+            <argument type="service" id="JsonApi\FieldNormalizer\Pool"/>
+        </service>
+        <service id="jsonapi.file_locator" class="Symfony\Component\Config\FileLocator">
+            <argument type="string">%kernel.project_dir%/config/</argument>
+        </service>
+        <service id="jsonapi.loader.file" class="JsonApi\Loader\FileLoader">
+            <argument type="collection"/>
+            <argument type="service" id="jsonapi.file_locator"/>
+            <argument type="service" id="JsonApi\Parser\MetadataParserFactory"/>
+        </service>
+        <service id="jsonapi.loader.cache" class="JsonApi\Loader\CacheLoader">
+            <argument type="constant">null</argument>
+            <argument type="service" id="Symfony\Component\Cache\Adapter\AdapterInterface"/>
+            <argument type="service" id="jsonapi.loader.file"/>
+        </service>
+        <service id="JsonApi\Metadata\LoaderRegister">
+            <argument type="service" id="jsonapi.loader.cache"/>
+        </service>
+        <service id="JsonApi\Metadata\ManagerRegistryRegister">
+            <argument type="service" id="JsonApi\Metadata\LoaderRegister"/>
+            <argument type="service" id="doctrine" on-invalid="null"/>
+        </service>
+        <service id="JsonApi\Metadata\RegisterInterface" alias="JsonApi\Metadata\LoaderRegister" public="true"/>
+    </services>
+</container>

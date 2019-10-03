@@ -1,0 +1,14 @@
+{
+    "name": "olegsuvorkov/jsonapi",
+    "license": "MIT",
+    "type": "library",
+    "description": "Symfony JSON API Bundle",
+    "autoload": {
+        "psr-4": {
+            "JsonApi\\": "src/"
+        }
+    },
+    "require": {
+        "symfony/yaml": "4.3.*"
+    }
+}
