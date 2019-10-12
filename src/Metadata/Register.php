@@ -7,22 +7,14 @@ class Register implements RegisterInterface
     /**
      * @var Metadata[]
      */
-    private $relTypeToMetadata = [];
+    protected $map = [];
 
     /**
-     * @var Metadata[]
+     * @param array $map
      */
-    private $relClassToMetadata = [];
-
-    /**
-     * @param MetadataInterface $metadata
-     */
-    public function add(MetadataInterface $metadata): void
+    public function __construct(array $map)
     {
-        $this->relClassToMetadata[$metadata->getClass()] = $metadata;
-        if ($metadata->getType()) {
-            $this->relTypeToMetadata[$metadata->getType()] = $metadata;
-        }
+        $this->map = $map;
     }
 
     /**
@@ -30,11 +22,12 @@ class Register implements RegisterInterface
      * @return Metadata|null
      * @throws UndefinedMetadataException
      */
-    public function getByClass(string $class): MetadataInterface
+    public function getByClass($class): MetadataInterface
     {
-        $metadata = $this->relClassToMetadata[$class] ?? null;
-        if ($metadata) {
-            return $metadata;
+        foreach ($this->map as $metadata) {
+            if ($metadata->isInstance($class)) {
+                return $metadata;
+            }
         }
         throw UndefinedMetadataException::notFindByClass($class);
     }
@@ -46,18 +39,10 @@ class Register implements RegisterInterface
      */
     public function getByType(string $type): MetadataInterface
     {
-        $metadata = $this->relTypeToMetadata[$type] ?? null;
+        $metadata = $this->map[$type] ?? null;
         if ($metadata) {
             return $metadata;
         }
         throw UndefinedMetadataException::notFindByType($type);
-    }
-
-    /**
-     * @return Metadata[]
-     */
-    public function all(): array
-    {
-        return $this->relClassToMetadata;
     }
 }

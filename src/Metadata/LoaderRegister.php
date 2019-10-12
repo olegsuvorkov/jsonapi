@@ -29,15 +29,7 @@ class LoaderRegister implements RegisterInterface
     /**
      * @inheritDoc
      */
-    public function add(MetadataInterface $metadata): void
-    {
-        $this->getOriginal()->add($metadata);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function getByClass(string $class): MetadataInterface
+    public function getByClass($class): MetadataInterface
     {
         return $this->getOriginal()->getByClass($class);
     }
@@ -50,20 +42,10 @@ class LoaderRegister implements RegisterInterface
         return $this->getOriginal()->getByType($type);
     }
 
-    /**
-     * @inheritDoc
-     */
-    public function all(): array
-    {
-        return $this->getOriginal()->all();
-    }
-
     private function getOriginal(): RegisterInterface
     {
         if ($this->original === null) {
-            $register = new Register();
-            $this->loader->load($register);
-            $this->original = $register;
+            $this->original = new Register($this->loader->load());
         }
         return $this->original;
     }

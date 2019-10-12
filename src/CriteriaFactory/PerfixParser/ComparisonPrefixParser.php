@@ -37,7 +37,7 @@ class ComparisonPrefixParser extends AbstractPrefixParser
     public function parse(string $data, int &$index, ContextInterface $context): Expression
     {
         $field = $this->match($data, ':', $index);
-        $field = $context->getField(explode('.', $field));
+//        $field = $context->getField(explode('.', $field));
         $value = $this->match($data, ';', $index);
         return new Comparison($field, $this->operator, $this->transformer->transform($value));
     }

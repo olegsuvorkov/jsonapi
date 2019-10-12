@@ -2,14 +2,14 @@
 
 namespace JsonApi\Metadata;
 
+use JsonApi\Transformer\InvalidArgumentException;
+use JsonApi\Transformer\TransformerPool;
+
 /**
  * @package JsonApi\Metadata\Field
  */
 interface FieldInterface
 {
-    const INCLUDE_DEFAULT   = 0;
-    const INCLUDE_CONTEXT   = 1;
-
     /**
      * @return string
      */
@@ -21,26 +21,32 @@ interface FieldInterface
     public function getSerializeName(): string;
 
     /**
-     * @return string|null
-     */
-    public function getRole(): ?string;
-
-    /**
-     * @return int
-     */
-    public function getInclude(): int;
-
-    /**
      * @param $object
      * @return mixed
      */
     public function getValue($object);
 
-    public function getType(): string;
+    /**
+     * @param $object
+     * @param TransformerPool $pool
+     * @return mixed
+     * @throws InvalidArgumentException
+     */
+    public function getNormalizeValue($object, TransformerPool $pool);
 
-    public function setType(string $type): void;
+    /**
+     * @param $object
+     * @param TransformerPool $pool
+     * @return mixed
+     * @throws InvalidArgumentException
+     */
+    public function getScalarValue($object, TransformerPool $pool);
+
+    public function getType(): string;
 
     public function getOption(string $name, $default = null);
 
     public function setOption(string $name, $value);
+
+    public function inContext(?array &$fields): bool;
 }

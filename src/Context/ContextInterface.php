@@ -2,7 +2,7 @@
 
 namespace JsonApi\Context;
 
-use Doctrine\ORM\Mapping\ClassMetadata;
+use JsonApi\Metadata\MetadataInterface;
 
 /**
  * @package JsonApi
@@ -10,23 +10,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 interface ContextInterface
 {
     /**
-     * @return ClassMetadata
+     * @return MetadataInterface
      */
-    public function getClassMetadata(): ClassMetadata;
-
-    /**
-     * @param array $paths
-     * @return string
-     */
-    public function getField(array $paths): string;
-
-    /**
-     * @return array
-     */
-    public function getInclude(): array;
-
-    /**
-     * @return string[][]
-     */
-    public function getFields(): array;
+    public function getMetadata(): MetadataInterface;
 }

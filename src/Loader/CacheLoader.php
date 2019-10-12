@@ -44,51 +44,25 @@ class CacheLoader implements LoaderInterface
     /**
      * @inheritDoc
      */
-    public function load(RegisterInterface $register): void
+    public function load(): array
     {
         if ($this->cacheKey === null) {
-            $this->loader->load($register);
-        } else {
-            $metadataList = null;
-            try {
-                $item = $this->adapter->getItem($this->cacheKey);
-                $metadataList = $this->getList($item);
-            } catch (InvalidArgumentException $e) {
-                throw new LoaderException($e->getMessage(), $e->getCode(), $e);
-            }
-            if ($metadataList !== null) {
-                foreach ($metadataList as $metadata) {
-                    $register->add($metadata);
-                }
-            } else {
-                $this->loader->load($register);
-                $item->set(array_values($register->all()));
-                $this->adapter->save($item);
-            }
+            return $this->loader->load();
         }
-    }
-
-    /**
-     * @param CacheItemInterface $item
-     * @return MetadataInterface[]|null
-     * @throws LoaderException
-     */
-    private function getList(CacheItemInterface $item): ?array
-    {
-        $list = null;
-        if ($item->isHit()) {
-            $data = $item->get();
-            if (is_array($data)) {
-                $list = [];
-                foreach ($data as $metadata) {
-                    if ($metadata instanceof MetadataInterface) {
-                        $list[] = $metadata;
-                    } else {
-                        throw new LoaderException();
-                    }
+        try {
+            $item = $this->adapter->getItem($this->cacheKey);
+            if ($item->isHit()) {
+                $data = $item->get();
+                if (is_array($data)) {
+                    return $data;
                 }
             }
+            $data = $this->loader->load();
+            $item->set($data);
+            $this->adapter->save($item);
+            return $data;
+        } catch (InvalidArgumentException $e) {
         }
-        return $list;
+        throw new LoaderException($e->getMessage(), $e->getCode(), $e);
     }
 }

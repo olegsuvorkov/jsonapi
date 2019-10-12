@@ -2,16 +2,29 @@
 
 namespace JsonApi\Metadata;
 
+use JsonApi\Transformer\InvalidArgumentException;
+use JsonApi\Transformer\TransformerPool;
+
 /**
  * @package JsonApi\ClassMetadata
  */
 interface MetadataInterface
 {
+    /**
+     * @return string
+     */
     public function getClass(): string;
 
-    public function getType(): ?string;
+    /**
+     * @return string
+     */
+    public function getType(): string;
 
-    public function setType(?string $type);
+    /**
+     * @param $object
+     * @return string
+     */
+    public function getTypeByObject($object): string;
 
     /**
      * @return FieldInterface[]
@@ -19,31 +32,42 @@ interface MetadataInterface
     public function getIdentifiers(): array;
 
     /**
-     * @param FieldInterface $field
-     * @return void
-     */
-    public function addIdentifier(FieldInterface $field): void;
-
-    /**
-     * @return mixed
+     * @return FieldInterface[]
      */
     public function getAttributes(): array;
 
-    public function addAttribute(FieldInterface $field): void;
-
     /**
-     * @return mixed
+     * @return FieldInterface[]
      */
     public function getRelationships(): array;
 
     /**
-     * @param FieldInterface $field
+     * @param $object
+     * @param TransformerPool $pool
+     * @return string
+     * @throws InvalidArgumentException
      */
-    public function addRelationship(FieldInterface $field): void;
+    public function getId($object, TransformerPool $pool): string;
 
-    public function setDiscriminatorAttribute(string $attribute);
+    /**
+     * @return MetadataInterface|null
+     */
+    public function getParent(): ?MetadataInterface;
 
-    public function addDiscriminator(string $value, MetadataInterface $metadata);
+    /**
+     * @param MetadataInterface|null $parent
+     */
+    public function setParent(?MetadataInterface $parent): void;
 
-    public function addInherit(MetadataInterface $metadata);
+    /**
+     * @param string[] $fields
+     * @return MetadataInterface
+     */
+    public function createContextMetadata(?array $fields): MetadataInterface;
+
+    /**
+     * @param object $object
+     * @return bool
+     */
+    public function isInstance($object): bool;
 }

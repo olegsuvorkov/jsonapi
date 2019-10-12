@@ -2,7 +2,7 @@
 
 namespace JsonApi;
 
-use JsonApi\DependencyInjection\Compiler\FieldNormalizerCompilerPass;
+use JsonApi\DependencyInjection\Compiler\TransformerCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
@@ -16,6 +16,6 @@ class JsonApiBundle extends Bundle
      */
     public function build(ContainerBuilder $container)
     {
-        $container->addCompilerPass(new FieldNormalizerCompilerPass());
+        $container->addCompilerPass(new TransformerCompilerPass());
     }
 }

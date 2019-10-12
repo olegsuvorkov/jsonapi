@@ -24,15 +24,15 @@ class SortingFactory implements SortingFactoryInterface
         }
         if (is_string($sorting)) {
             $list = [];
-            foreach (explode(',', $sorting) as $sort) {
-                $direct = Criteria::ASC;
-                if (0 === strncmp('-', $sort, 1)) {
-                    $direct = Criteria::DESC;
-                    $sort = substr($sort, 1);
-                }
-                $field = $context->getField(explode('.', $sort));
-                $list[$field] = $direct;
-            }
+//            foreach (explode(',', $sorting) as $sort) {
+//                $direct = Criteria::ASC;
+//                if (0 === strncmp('-', $sort, 1)) {
+//                    $direct = Criteria::DESC;
+//                    $sort = substr($sort, 1);
+//                }
+//                $field = $context->getField(explode('.', $sort));
+//                $list[$field] = $direct;
+//            }
             return $list;
         }
         throw new ParseUrlException();

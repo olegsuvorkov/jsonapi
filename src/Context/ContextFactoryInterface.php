@@ -15,7 +15,7 @@ interface ContextFactoryInterface
      * @param string $include
      * @param string[][] $fields
      * @return ContextInterface
-     *@throws InvalidTypeException
+     * @throws InvalidTypeException
      * @throws ParseUrlException
      */
     public function createContext($type, $include, $fields): ContextInterface;

@@ -4,57 +4,58 @@
     xsi:schemaLocation="http://symfony.com/schema/dic/services
                         http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
-        <defaults public="false"/>
-        <service id="jsonapi.field_normalizer.int" class="JsonApi\FieldNormalizer\ScalarFieldNormalizer" autoconfigure="true">
-            <argument type="string">int</argument>
-            <argument type="string">is_int</argument>
-            <argument type="string">intval</argument>
+        <!-- BEGIN TRANSFORMER CONFIGURATOR -->
+        <service id="json_api.transformer_configurator.bool" class="JsonApi\TransformerConfigurator\ScalarTransformerConfigurator">
+            <argument type="service" id="JsonApi\Transformer\BoolTransformer"/>
+            <tag name="json_api.transformer_configurator" type="bool"/>
         </service>
-        <service id="jsonapi.field_normalizer.float" class="JsonApi\FieldNormalizer\ScalarFieldNormalizer" autoconfigure="true">
-            <argument type="string">float</argument>
-            <argument type="string">is_float</argument>
-            <argument type="string">floatval</argument>
+        <service id="json_api.transformer_configurator.enum" class="JsonApi\TransformerConfigurator\EnumTransformerConfigurator">
+            <argument type="service" id="JsonApi\Transformer\EnumTransformer"/>
+            <tag name="json_api.transformer_configurator" type="enum"/>
         </service>
-        <service id="jsonapi.field_normalizer.string" class="JsonApi\FieldNormalizer\ScalarFieldNormalizer" autoconfigure="true">
-            <argument type="string">string</argument>
-            <argument type="string">is_string</argument>
-            <argument type="string">strval</argument>
+        <service id="json_api.transformer_configurator.float" class="JsonApi\TransformerConfigurator\ScalarTransformerConfigurator">
+            <argument type="service" id="JsonApi\Transformer\FloatTransformer"/>
+            <tag name="json_api.transformer_configurator" type="float"/>
         </service>
-        <service id="jsonapi.field_normalizer.bool" class="JsonApi\FieldNormalizer\ScalarFieldNormalizer" autoconfigure="true">
-            <argument type="string">bool</argument>
-            <argument type="string">is_bool</argument>
-            <argument type="string">boolval</argument>
+        <service id="json_api.transformer_configurator.int" class="JsonApi\TransformerConfigurator\ScalarTransformerConfigurator">
+            <argument type="service" id="JsonApi\Transformer\IntegerTransformer"/>
+            <tag name="json_api.transformer_configurator" type="int"/>
         </service>
-        <service id="jsonapi.field_normalizer.enum" class="JsonApi\FieldNormalizer\EnumFieldNormalizer" autoconfigure="true"/>
-        <service id="jsonapi.field_normalizer.relationship" class="JsonApi\FieldNormalizer\RelationshipFieldNormalizer" autoconfigure="true">
-            <argument type="service" id="JsonApi\Metadata\RegisterInterface"/>
+        <service id="json_api.transformer_configurator.string" class="JsonApi\TransformerConfigurator\ScalarTransformerConfigurator">
+            <argument type="service" id="JsonApi\Transformer\StringTransformer"/>
+            <tag name="json_api.transformer_configurator" type="string"/>
         </service>
-        <service id="jsonapi.field_normalizer.multiple_relationship" class="JsonApi\FieldNormalizer\MultipleRelationshipFieldNormalizer" autoconfigure="true">
-            <argument type="service" id="JsonApi\Metadata\RegisterInterface"/>
-        </service>
-        <service id="JsonApi\FieldNormalizer\Pool"/>
-        <service id="JsonApi\Parser\MetadataParserFactory">
-            <argument type="service" id="JsonApi\FieldNormalizer\Pool"/>
-        </service>
-        <service id="jsonapi.file_locator" class="Symfony\Component\Config\FileLocator">
-            <argument type="string">%kernel.project_dir%/config/</argument>
-        </service>
-        <service id="jsonapi.loader.file" class="JsonApi\Loader\FileLoader">
+        <service id="JsonApi\TransformerConfigurator\AttributeTransformerConfigurator">
             <argument type="collection"/>
-            <argument type="service" id="jsonapi.file_locator"/>
-            <argument type="service" id="JsonApi\Parser\MetadataParserFactory"/>
         </service>
-        <service id="jsonapi.loader.cache" class="JsonApi\Loader\CacheLoader">
+        <service id="JsonApi\TransformerConfigurator\RelationshipTransformerConfigurator">
+            <argument type="service" id="JsonApi\Transformer\RelationshipTransformer"/>
+            <argument type="service" id="JsonApi\Transformer\MultipleRelationshipTransformer"/>
+        </service>
+        <!-- END TRANSFORMER CONFIGURATOR -->
+
+
+        <service id="json_api.metadata_builder.attribute" class="JsonApi\MetadataBuilder\FieldBuilderFactory">
+            <argument type="service" id="JsonApi\TransformerConfigurator\AttributeTransformerConfigurator"/>
+        </service>
+        <service id="json_api.metadata_builder.relationship" class="JsonApi\MetadataBuilder\FieldBuilderFactory">
+            <argument type="service" id="JsonApi\TransformerConfigurator\RelationshipTransformerConfigurator"/>
+        </service>
+        <service id="JsonApi\MetadataBuilder\MetadataBuilderFactory">
+            <argument type="service" id="json_api.metadata_builder.attribute"/>
+            <argument type="service" id="json_api.metadata_builder.relationship"/>
+        </service>
+        <service id="JsonApi\Loader\ParserLoader">
+            <argument type="collection"/>
+            <argument type="service" id="JsonApi\MetadataBuilder\MetadataBuilderFactory"/>
+        </service>
+        <service id="JsonApi\Loader\CacheLoader">
             <argument type="constant">null</argument>
             <argument type="service" id="Symfony\Component\Cache\Adapter\AdapterInterface"/>
-            <argument type="service" id="jsonapi.loader.file"/>
+            <argument type="service" id="JsonApi\Loader\ParserLoader"/>
         </service>
         <service id="JsonApi\Metadata\LoaderRegister">
-            <argument type="service" id="jsonapi.loader.cache"/>
-        </service>
-        <service id="JsonApi\Metadata\ManagerRegistryRegister">
-            <argument type="service" id="JsonApi\Metadata\LoaderRegister"/>
-            <argument type="service" id="doctrine" on-invalid="null"/>
+            <argument type="service" id="JsonApi\Loader\ParserLoader"/>
         </service>
         <service id="JsonApi\Metadata\RegisterInterface" alias="JsonApi\Metadata\LoaderRegister" public="true"/>
     </services>

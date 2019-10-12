@@ -3,7 +3,7 @@
 namespace JsonApi\Loader;
 
 use JsonApi\Exception\LoaderException;
-use JsonApi\Metadata\RegisterInterface;
+use JsonApi\Metadata\MetadataInterface;
 
 /**
  * @package JsonApi\Loader
@@ -11,8 +11,8 @@ use JsonApi\Metadata\RegisterInterface;
 interface LoaderInterface
 {
     /**
-     * @param RegisterInterface $register
+     * @return MetadataInterface[]
      * @throws LoaderException
      */
-    public function load(RegisterInterface $register): void;
+    public function load(): array;
 }

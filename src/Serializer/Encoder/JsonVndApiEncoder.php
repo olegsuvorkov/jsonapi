@@ -2,7 +2,12 @@
 
 namespace JsonApi\Serializer\Encoder;
 
+use JsonApi\Metadata\ContextRegisterFactory;
+use JsonApi\Metadata\RegisterInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Serializer\Encoder\EncoderInterface;
 use Symfony\Component\Serializer\Encoder\JsonEncode;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
@@ -25,11 +30,20 @@ class JsonVndApiEncoder implements EncoderInterface, NormalizationAwareInterface
      * @var JsonEncoder
      */
     private $encoder;
+    /**
+     * @var ContextRegisterFactory
+     */
+    private $contextRegisterFactory;
 
-    public function __construct(RequestStack $requestStack)
+    /**
+     * @param RequestStack $requestStack
+     * @param ContextRegisterFactory $contextRegisterFactory
+     */
+    public function __construct(RequestStack $requestStack, ContextRegisterFactory $contextRegisterFactory)
     {
         $this->requestStack = $requestStack;
         $this->encoder = new JsonEncode();
+        $this->contextRegisterFactory = $contextRegisterFactory;
     }
 
     /**
@@ -37,11 +51,14 @@ class JsonVndApiEncoder implements EncoderInterface, NormalizationAwareInterface
      */
     public function encode($data, $format, array $context = [])
     {
+        $context['register'] = $this->getRegister($context);
         $data = $this->serializer->normalize($data, self::FORMAT, $context);
         $data = [
             'data' => $data,
         ];
-        return $this->encoder->encode($data, $format, $context);
+        return $this->encoder->encode($data, $format, array_merge($context, [
+            'json_encode_options' => JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+        ]));
     }
 
     /**
@@ -52,12 +69,33 @@ class JsonVndApiEncoder implements EncoderInterface, NormalizationAwareInterface
         return $format === self::FORMAT ||
                (
                     $this->encoder->supportsEncoding($format) &&
-                    $this->checkAcceptable()
+                    self::checkAcceptable($this->requestStack->getMasterRequest())
                );
     }
 
-    private function checkAcceptable()
+    private function getRegister(array $context) : RegisterInterface
     {
-        return in_array(self::FORMAT, $this->requestStack->getMasterRequest()->getAcceptableContentTypes());
+        if (isset($context['register'])) {
+            $register = $context['register'];
+        } elseif (
+            ($request = $this->requestStack->getMasterRequest()) &&
+            ($request->attributes->has('contextRegister'))
+        ) {
+            $register = $request->attributes->get('contextRegister');
+        } else {
+            $register = $this->contextRegisterFactory->createContextRegister(null);
+        }
+        if ($register instanceof RegisterInterface) {
+            return $register;
+        }
+        throw new BadRequestHttpException();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public static function checkAcceptable(?Request $request): bool
+    {
+        return $request && in_array(self::FORMAT, $request->getAcceptableContentTypes());
     }
 }
