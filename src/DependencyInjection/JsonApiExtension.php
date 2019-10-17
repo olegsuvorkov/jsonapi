@@ -2,12 +2,16 @@
 
 namespace JsonApi\DependencyInjection;
 
+use JsonApi\Controller\ControllerInterface;
+use JsonApi\DependencyInjection\Compiler\RoutingCompilerPass;
 use JsonApi\DependencyInjection\Compiler\TransformerCompilerPass;
 use JsonApi\DependencyInjection\Configuration\JsonApiConfiguration;
+use JsonApi\KernelEvent\JsonApiListener;
 use JsonApi\Loader\CacheLoader;
 use JsonApi\Loader\ParserLoader;
 use JsonApi\Metadata\LoaderRegister;
 use JsonApi\Parser\YamlParser;
+use JsonApi\Router\RouteLoader;
 use JsonApi\Transformer\TransformerInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -28,9 +32,15 @@ class JsonApiExtension extends Extension
         $container
             ->registerForAutoconfiguration(TransformerInterface::class)
             ->addTag(TransformerCompilerPass::TAG_TRANSFORMER);
+
+        $container
+            ->registerForAutoconfiguration(ControllerInterface::class)
+            ->addTag(RoutingCompilerPass::TAG_CONTROLLER);
+
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../../config'));
         $loader->load('metadata.xml');
         $loader->load('serializer.xml');
+        $loader->load('routing.xml');
         $projectDir = $container->getParameter('kernel.project_dir').'/config';
         $locator = new FileLocator($projectDir);
         $configuration = $this->getConfiguration($configs, $container);
@@ -52,6 +62,12 @@ class JsonApiExtension extends Extension
             $cacheLoaderDefinition->replaceArgument(0, $config['cache_key']);
             $container->getDefinition(LoaderRegister::class)->replaceArgument(0, $cacheLoaderDefinition);
         }
+        $container
+            ->getDefinition(RouteLoader::class)
+            ->replaceArgument(0, $config['path_prefix'])
+            ->replaceArgument(1, $config['name_prefix']);
+
+        $container->getDefinition(JsonApiListener::class)->replaceArgument(2, $config['path_prefix']);
     }
 
     /**

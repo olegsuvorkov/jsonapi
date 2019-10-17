@@ -5,7 +5,7 @@ namespace JsonApi\Transformer;
 /**
  * @package JsonApi\Transformer
  */
-class StringTransformer implements TransformerInterface
+class StringTransformer extends Transformer
 {
     /**
      * @inheritDoc
@@ -24,12 +24,5 @@ class StringTransformer implements TransformerInterface
             return $data;
         }
         throw new InvalidArgumentException();
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function reverseTransform($data, array $options)
-    {
     }
 }

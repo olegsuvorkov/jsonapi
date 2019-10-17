@@ -1,17 +1,16 @@
 <?php
 
-namespace JsonApi\TransformerConfigurator;
+namespace JsonApi\MetadataBuilder\Configurator;
 
-use JsonApi\Exception\LoaderException;
 use JsonApi\Metadata\Field;
-use JsonApi\MetadataBuilder\FieldBuilder;
+use JsonApi\MetadataBuilder\BuilderException;
 use JsonApi\MetadataBuilder\MetadataBuilder;
 use JsonApi\Transformer\TransformerInterface;
 
 /**
- * @package JsonApi\TransformerConfigurator
+ * @package JsonApi\MetadataBuilder\Configurator
  */
-class RelationshipTransformerConfigurator implements TransformerConfiguratorInterface
+class RelationshipConfigurator implements ConfiguratorInterface
 {
     /**
      * @var TransformerInterface
@@ -36,19 +35,20 @@ class RelationshipTransformerConfigurator implements TransformerConfiguratorInte
     /**
      * @inheritDoc
      */
-    public function configure(Field $field, FieldBuilder $fieldBuilder, array $map): void
+    public function configure(Field $field, array $options, array $map): void
     {
-        $multiple = $fieldBuilder->options['multiple'] ?? false;
+        $multiple = $options['multiple'] ?? false;
         if (!is_bool($multiple)) {
-            throw new LoaderException('Invalid property multiple expected bool');
+            throw new BuilderException('Invalid property multiple expected bool');
         }
-        $field->setType($multiple ? $this->multiple->getType() : $this->single->getType());
-        $type = $fieldBuilder->options['type'] ?? null;
+        $field->setTransformer($multiple ? $this->multiple : $this->single);
+        $type = $options['type'] ?? null;
         if (!is_string($type)) {
-            throw new LoaderException('Invalid property type expected string');
+            throw new BuilderException('Invalid property type expected string');
         }
         $target = $map[$type] ?? null;
         if ($target instanceof MetadataBuilder) {
+            $field->setOption('multiple', $multiple);
             $field->setOption('target', $target->getMetadata($map));
         }
     }

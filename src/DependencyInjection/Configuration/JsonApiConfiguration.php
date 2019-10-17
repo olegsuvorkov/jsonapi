@@ -17,6 +17,12 @@ class JsonApiConfiguration implements ConfigurationInterface
         $rootNode = $builder->getRootNode();
         $rootNode
             ->children()
+                ->scalarNode('path_prefix')
+                    ->defaultValue('')
+                ->end()
+                ->scalarNode('name_prefix')
+                    ->defaultValue('')
+                ->end()
                 ->scalarNode('cache_key')
                     ->defaultNull()
                 ->end()

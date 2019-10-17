@@ -2,10 +2,15 @@
 
 namespace JsonApi\KernelEvent;
 
-use JsonApi\Exception\InvalidTypeException;
+use JsonApi\Context\Context;
+use JsonApi\ContextInclude\ContextIncludeBuilder;
 use JsonApi\Exception\ParseUrlException;
 use JsonApi\Metadata\ContextRegisterFactory;
+use JsonApi\Metadata\UndefinedMetadataException;
 use JsonApi\Serializer\Encoder\JsonVndApiEncoder;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Translation\Translator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,15 +32,21 @@ class JsonApiListener implements EventSubscriberInterface
      * @var Translator
      */
     private $translator;
+    /**
+     * @var string
+     */
+    private $prefix;
 
     /**
-     * @param Translator             $translator
+     * @param Translator $translator
      * @param ContextRegisterFactory $contextRegisterFactory
+     * @param string $prefix
      */
-    public function __construct(Translator $translator, ContextRegisterFactory $contextRegisterFactory)
+    public function __construct(Translator $translator, ContextRegisterFactory $contextRegisterFactory, string $prefix)
     {
         $this->translator             = $translator;
         $this->contextRegisterFactory = $contextRegisterFactory;
+        $this->prefix                 = $prefix;
     }
 
     /**
@@ -55,16 +66,42 @@ class JsonApiListener implements EventSubscriberInterface
      */
     public function onKernelRequest(RequestEvent $event)
     {
-        if (JsonVndApiEncoder::checkAcceptable($event->getRequest())) {
-            $request = $event->getRequest();
-            $locale  = $request->getPreferredLanguage($this->translator->getFallbackLocales());
-            $request->setLocale($locale);
-            $this->translator->setLocale($locale);
-            if ($request->isMethod(Request::METHOD_GET)) {
-                $fields = $request->query->get('fields');
-                $contextRegister  = $this->contextRegisterFactory->createContextRegister($fields);
-                $request->attributes->set('contextRegister', $contextRegister);
+        $request = $event->getRequest();
+        if (0 !== strncmp($request->getPathInfo(), $this->prefix, strlen($this->prefix))) {
+            return;
+        }
+        if (!JsonVndApiEncoder::checkAcceptable($request)) {
+            $event->setResponse(new JsonResponse([
+                'errors' => [
+                    'status' => Response::HTTP_BAD_REQUEST,
+                ]
+            ], Response::HTTP_BAD_REQUEST));
+            return;
+        }
+        $locale  = $request->getPreferredLanguage($this->translator->getFallbackLocales());
+        $request->setLocale($locale);
+        $this->translator->setLocale($locale);
+        if ($request->isMethod(Request::METHOD_GET)) {
+            $fields = $request->query->get('fields');
+            $contextRegister  = $this->contextRegisterFactory->createContextRegister($fields);
+            $request->attributes->set('contextRegister', $contextRegister);
+            $type = $request->attributes->get('type', '');
+            try {
+                $metadata = $contextRegister->getByType($type);
+            } catch (UndefinedMetadataException $e) {
+                $event->setResponse(new JsonResponse([
+                    'errors' => [
+                        'title' => 'Undefined type',
+                        'status' => Response::HTTP_BAD_REQUEST,
+
+                    ]
+                ], Response::HTTP_BAD_REQUEST));
+                return;
             }
+            $contextIncludeBuilder = new ContextIncludeBuilder($contextRegister, $type);
+            $contextInclude = $contextIncludeBuilder->build($request->query->get('include', ''));
+            $request->attributes->set('contextInclude', $contextInclude);
+            $request->attributes->set('context', new Context($metadata, $contextInclude, $contextRegister));
         }
     }
 

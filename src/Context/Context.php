@@ -2,25 +2,19 @@
 
 namespace JsonApi\Context;
 
+use JsonApi\ContextInclude\ContextIncludeInterface;
 use JsonApi\Metadata\MetadataInterface;
-use JsonApi\Metadata\Register;
 use JsonApi\Metadata\RegisterInterface;
-use JsonApi\Metadata\UndefinedMetadataException;
 
 /**
  * @package JsonApi
  */
-class Context extends Register implements ContextInterface
+class Context implements ContextInterface
 {
     /**
      * @var RegisterInterface
      */
-    private $original;
-
-    /**
-     * @var string[][]
-     */
-    public $fields = [];
+    private $register;
 
     /**
      * @var string
@@ -28,17 +22,20 @@ class Context extends Register implements ContextInterface
     private $metadata;
 
     /**
-     * @param string $type
-     * @param array $fields
-     * @param RegisterInterface $original
-     * @throws UndefinedMetadataException
+     * @var ContextIncludeInterface
      */
-    public function __construct(string $type, array $fields, RegisterInterface $original)
+    private $include;
+
+    /**
+     * @param MetadataInterface $metadata
+     * @param ContextIncludeInterface $include
+     * @param RegisterInterface $register
+     */
+    public function __construct(MetadataInterface $metadata, ContextIncludeInterface $include, RegisterInterface $register)
     {
-        parent::__construct([]);
-        $this->fields = $fields;
-        $this->original = $original;
-        $this->metadata = $this->getByType($type);
+        $this->metadata = $metadata;
+        $this->register = $register;
+        $this->include = $include;
     }
 
     /**
@@ -47,5 +44,29 @@ class Context extends Register implements ContextInterface
     public function getMetadata(): MetadataInterface
     {
         return $this->metadata;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getByClass($class): MetadataInterface
+    {
+        return $this->register->getByClass($class);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getByType(string $type): MetadataInterface
+    {
+        return $this->register->getByType($type);
+    }
+
+    /**
+     * @return ContextIncludeInterface
+     */
+    public function getInclude(): ContextIncludeInterface
+    {
+        return $this->include;
     }
 }

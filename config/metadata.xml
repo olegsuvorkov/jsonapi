@@ -5,30 +5,30 @@
                         http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <!-- BEGIN TRANSFORMER CONFIGURATOR -->
-        <service id="json_api.transformer_configurator.bool" class="JsonApi\TransformerConfigurator\ScalarTransformerConfigurator">
+        <service id="json_api.transformer_configurator.bool" class="JsonApi\MetadataBuilder\Configurator\Configurator">
             <argument type="service" id="JsonApi\Transformer\BoolTransformer"/>
             <tag name="json_api.transformer_configurator" type="bool"/>
         </service>
-        <service id="json_api.transformer_configurator.enum" class="JsonApi\TransformerConfigurator\EnumTransformerConfigurator">
+        <service id="json_api.transformer_configurator.enum" class="JsonApi\MetadataBuilder\Configurator\EnumConfigurator">
             <argument type="service" id="JsonApi\Transformer\EnumTransformer"/>
             <tag name="json_api.transformer_configurator" type="enum"/>
         </service>
-        <service id="json_api.transformer_configurator.float" class="JsonApi\TransformerConfigurator\ScalarTransformerConfigurator">
+        <service id="json_api.transformer_configurator.float" class="JsonApi\MetadataBuilder\Configurator\Configurator">
             <argument type="service" id="JsonApi\Transformer\FloatTransformer"/>
             <tag name="json_api.transformer_configurator" type="float"/>
         </service>
-        <service id="json_api.transformer_configurator.int" class="JsonApi\TransformerConfigurator\ScalarTransformerConfigurator">
+        <service id="json_api.transformer_configurator.int" class="JsonApi\MetadataBuilder\Configurator\Configurator">
             <argument type="service" id="JsonApi\Transformer\IntegerTransformer"/>
             <tag name="json_api.transformer_configurator" type="int"/>
         </service>
-        <service id="json_api.transformer_configurator.string" class="JsonApi\TransformerConfigurator\ScalarTransformerConfigurator">
+        <service id="json_api.transformer_configurator.string" class="JsonApi\MetadataBuilder\Configurator\Configurator">
             <argument type="service" id="JsonApi\Transformer\StringTransformer"/>
             <tag name="json_api.transformer_configurator" type="string"/>
         </service>
-        <service id="JsonApi\TransformerConfigurator\AttributeTransformerConfigurator">
+        <service id="JsonApi\MetadataBuilder\Configurator\AttributeConfigurator">
             <argument type="collection"/>
         </service>
-        <service id="JsonApi\TransformerConfigurator\RelationshipTransformerConfigurator">
+        <service id="JsonApi\MetadataBuilder\Configurator\RelationshipConfigurator">
             <argument type="service" id="JsonApi\Transformer\RelationshipTransformer"/>
             <argument type="service" id="JsonApi\Transformer\MultipleRelationshipTransformer"/>
         </service>
@@ -36,10 +36,10 @@
 
 
         <service id="json_api.metadata_builder.attribute" class="JsonApi\MetadataBuilder\FieldBuilderFactory">
-            <argument type="service" id="JsonApi\TransformerConfigurator\AttributeTransformerConfigurator"/>
+            <argument type="service" id="JsonApi\MetadataBuilder\Configurator\AttributeConfigurator"/>
         </service>
         <service id="json_api.metadata_builder.relationship" class="JsonApi\MetadataBuilder\FieldBuilderFactory">
-            <argument type="service" id="JsonApi\TransformerConfigurator\RelationshipTransformerConfigurator"/>
+            <argument type="service" id="JsonApi\MetadataBuilder\Configurator\RelationshipConfigurator"/>
         </service>
         <service id="JsonApi\MetadataBuilder\MetadataBuilderFactory">
             <argument type="service" id="json_api.metadata_builder.attribute"/>
@@ -56,6 +56,7 @@
         </service>
         <service id="JsonApi\Metadata\LoaderRegister">
             <argument type="service" id="JsonApi\Loader\ParserLoader"/>
+            <argument type="collection"/>
         </service>
         <service id="JsonApi\Metadata\RegisterInterface" alias="JsonApi\Metadata\LoaderRegister" public="true"/>
     </services>

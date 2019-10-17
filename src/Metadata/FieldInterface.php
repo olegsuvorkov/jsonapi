@@ -3,7 +3,6 @@
 namespace JsonApi\Metadata;
 
 use JsonApi\Transformer\InvalidArgumentException;
-use JsonApi\Transformer\TransformerPool;
 
 /**
  * @package JsonApi\Metadata\Field
@@ -28,25 +27,28 @@ interface FieldInterface
 
     /**
      * @param $object
-     * @param TransformerPool $pool
      * @return mixed
      * @throws InvalidArgumentException
      */
-    public function getNormalizeValue($object, TransformerPool $pool);
+    public function getNormalizeValue($object);
 
     /**
      * @param $object
-     * @param TransformerPool $pool
      * @return mixed
      * @throws InvalidArgumentException
      */
-    public function getScalarValue($object, TransformerPool $pool);
+    public function getScalarValue($object);
 
-    public function getType(): string;
-
+    /**
+     * @param string $name
+     * @param mixed  $default
+     * @return mixed
+     */
     public function getOption(string $name, $default = null);
 
-    public function setOption(string $name, $value);
-
+    /**
+     * @param array|null $fields
+     * @return bool
+     */
     public function inContext(?array &$fields): bool;
 }

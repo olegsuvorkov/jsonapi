@@ -2,12 +2,14 @@
 
 namespace JsonApi\MetadataBuilder;
 
-use JsonApi\Exception\LoaderException;
 use JsonApi\Metadata\FieldInterface;
 use JsonApi\Metadata\Metadata;
 use ReflectionClass;
 use ReflectionException;
 
+/**
+ * @package JsonApi\MetadataBuilder
+ */
 class MetadataBuilder
 {
     /**
@@ -31,7 +33,7 @@ class MetadataBuilder
     public $metas = [];
 
     /**
-     * @var MetadataBuilder[]
+     * @var string[]
      */
     public $discrimination = [];
 
@@ -51,84 +53,89 @@ class MetadataBuilder
     public $type;
 
     /**
-     * @var Metadata
-     */
-    private $metadata;
-
-    /**
      * @var ReflectionClass
      */
     public $reflectionClass;
 
     /**
-     * @param string $class
-     * @throws LoaderException
+     * @var Metadata
      */
-    public function __construct(string $class)
+    private $metadata;
+
+    /**
+     * @var callable
+     */
+    private $sortCallback;
+
+    /**
+     * @param string $class
+     * @param callable $sortCallback
+     * @throws BuilderException
+     */
+    public function __construct(string $class, callable $sortCallback)
     {
         $this->class = $class;
+        $this->sortCallback = $sortCallback;
         try {
             $this->reflectionClass = new ReflectionClass($class);
         } catch (ReflectionException $e) {
-            throw new LoaderException('', 0, $e);
+            throw new BuilderException(sprintf('Not find class `%s`', $class), 0, $e);
         }
     }
 
     /**
      * @param array $map
      * @return Metadata
+     * @throws BuilderException
      */
     public function getMetadata(array $map)
     {
         if ($this->metadata === null) {
             $this->metadata = new Metadata($this->class, $this->type);
-            $inherits = $this->inherits;
-            $inherits[] = $this;
-            $data = array_fill_keys(['identifiers', 'attributes', 'relationships'], []);
-            $class = $this->class;
             foreach ($this->discrimination as $discrimination) {
-                $this->metadata->addDiscriminator($discrimination->getMetadata($map));
-            }
-            $transformer = function (FieldBuilder $builder) use ($map, $class) {
-                try {
-                    return $builder->getField($map);
-                } catch (LoaderException $e) {
-                    throw new LoaderException($e->getMessage().' in class '.$class, 0, $e);
+                if (isset($map[$discrimination])) {
+                    $this->metadata->addDiscriminator($map[$discrimination]->getMetadata($map));
+                } else {
+                    throw new BuilderException();
                 }
-            };
-            foreach ($data as $property => &$list) {
-                $list = array_map($transformer, array_merge(...array_column($inherits, $property)));
-                unset($list);
             }
-            $this->sortField($data['attributes']);
-            $this->sortField($data['relationships']);
-            $this->metadata->setIdentifiers(array_values($data['identifiers']));
-            $this->metadata->setAttributes(array_values($data['attributes']));
-            $this->metadata->setRelationships(array_values($data['relationships']));
+            $identifiers   = [];
+            $attributes    = [];
+            $relationships = [];
+            foreach ($this->getInherits() as $inherit) {
+                $identifiers = array_merge($identifiers, $inherit->identifiers);
+                $attributes = array_merge($attributes, $inherit->attributes);
+                $relationships = array_merge($relationships, $inherit->relationships);
+            }
+            $identifiers = $this->getFields($identifiers, $map);
+            $this->metadata->setIdentifiers($identifiers);
+            $attributes = $this->getFields($attributes, $map);
+            usort($attributes, $this->sortCallback);
+            $this->metadata->setAttributes($attributes);
+            $relationships = $this->getFields($relationships, $map);
+            usort($relationships, $this->sortCallback);
+            $this->metadata->setRelationships($relationships);
         }
         return $this->metadata;
     }
 
-    private function sortField(array &$fields)
+    /**
+     * @param FieldBuilder[] $builders
+     * @param array $map
+     * @return FieldInterface[]
+     * @throws BuilderException
+     */
+    private function getFields(array $builders, array $map): array
     {
-        usort($fields, function(FieldInterface $left, FieldInterface $right) {
-            return $left->getSerializeName() <=> $right->getSerializeName();
-        });
+        $fields = [];
+        foreach ($builders as $builder) {
+            $fields[] = $builder->getField($map);
+        }
+        return $fields;
     }
 
-    /**
-     * @param string|string[] $method
-     * @return string
-     * @throws LoaderException
-     */
-    public function getMethod($method)
+    private function getInherits()
     {
-        $methods = (array) $method;
-        foreach ($methods as $method) {
-            if ($this->reflectionClass->hasMethod($method)) {
-                return $method;
-            }
-        }
-        throw LoaderException::invalidMethods($this->class, $methods);
+        return array_merge($this->inherits, [$this]);
     }
 }

@@ -23,22 +23,18 @@
             <tag name="json_api.transformer"/>
         </service>
         <service id="JsonApi\Transformer\RelationshipTransformer">
-            <argument type="service" id="JsonApi\Transformer\TransformerPool"/>
             <tag name="json_api.transformer"/>
         </service>
         <service id="JsonApi\Transformer\StringTransformer">
             <tag name="json_api.transformer"/>
         </service>
-        <service id="JsonApi\Transformer\TransformerPool"/>
         <!-- END TRANSFORMER -->
 
         <service id="JsonApi\Serializer\Encoder\JsonVndApiEncoder">
-            <argument type="service" id="Symfony\Component\HttpFoundation\RequestStack"/>
             <argument type="service" id="JsonApi\Metadata\ContextRegisterFactory"/>
             <tag name="serializer.encoder" priority="1000"/>
         </service>
         <service id="JsonApi\Serializer\Normalizer\MetadataNormalizer">
-            <argument type="service" id="JsonApi\Transformer\TransformerPool"/>
             <tag name="serializer.normalizer" priority="1000"/>
         </service>
         <service id="JsonApi\Metadata\ContextRegisterFactory">
@@ -47,6 +43,7 @@
         <service id="JsonApi\KernelEvent\JsonApiListener">
             <argument type="service" id="translator.default"/>
             <argument type="service" id="JsonApi\Metadata\ContextRegisterFactory"/>
+            <argument type="string"/>
             <tag name="kernel.event_subscriber"/>
         </service>
     </services>

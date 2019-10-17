@@ -2,7 +2,7 @@
 
 namespace JsonApi\MetadataBuilder;
 
-use JsonApi\Exception\LoaderException;
+use JsonApi\Metadata\FieldInterface;
 
 /**
  * @package JsonApi\MetadataBuilder
@@ -10,9 +10,19 @@ use JsonApi\Exception\LoaderException;
 class MetadataBuilderFactory
 {
     /**
-     * @var FieldBuilderFactory[]
+     * @var FieldBuilderFactory
      */
-    private $factory;
+    private $attributes;
+
+    /**
+     * @var FieldBuilderFactory
+     */
+    private $relationships;
+
+    /**
+     * @var callable
+     */
+    private $sortCallback;
 
     /**
      * @param FieldBuilderFactory $attributes
@@ -20,55 +30,56 @@ class MetadataBuilderFactory
      */
     public function __construct(FieldBuilderFactory $attributes, FieldBuilderFactory $relationships)
     {
-        $this->factory['attributes'] = $attributes;
-        $this->factory['relationships'] = $relationships;
+        $this->attributes = $attributes;
+        $this->relationships = $relationships;
+        $this->sortCallback = function (FieldInterface $left, FieldInterface $right) {
+            return $left->getSerializeName() <=> $right->getSerializeName();
+        };
+    }
+
+    /**
+     * @param array $list
+     * @return array
+     * @throws BuilderException
+     */
+    public function createMetadataList(array $list)
+    {
+        $map = $this->createMetadataBuilderList($list);
+        $result = [];
+        foreach ($map as $type => $builder) {
+            $result[$type] = $builder->getMetadata($map);
+        }
+        return array_reverse($result);
     }
 
     /**
      * @param array $list
      * @return MetadataBuilder[]
-     * @throws LoaderException
+     * @throws BuilderException
      */
-    public function createMetadataBuilderList(array $list)
+    private function createMetadataBuilderList(array $list)
     {
-        $this->sortInherit($list);
-        $classes = array_keys($list);
-        $inheritMap = $this->getInheritMap($classes);
-        /** @var MetadataBuilder[][] $discriminationMap */
-        $discriminationMap = array_fill_keys($classes, []);
+        uksort($list, function (string $left, string $right) {
+            return is_a($left, $right, true) ? 1 : -1;
+        });
         $map = [];
         $result = [];
         foreach ($list as $class => $parameters) {
+            $file = $parameters['file'] ?? null;
+            unset($parameters['file']);
             try {
-                $discrimination = $parameters['discrimination'] ?? [];
-                unset($parameters['discrimination']);
-                if (!is_array($discrimination)) {
-                    throw new LoaderException('Invalid property discrimination expected array');
-                }
-                $metadataBuilder = $this->createMetadataBuilder($class, $parameters);
-                foreach ($inheritMap[$class] as $inheritClass) {
-                    $metadataBuilder->inherits[] = $map[$inheritClass];
-                }
-                foreach ($discriminationMap[$class] as $originalMetadataBuilder) {
-                    $originalMetadataBuilder->discrimination[] = $metadataBuilder;
-                }
-                foreach ($discrimination as $targetClass) {
-                    if (is_string($targetClass)) {
-                        if (isset($discriminationMap[$targetClass])) {
-                            $discriminationMap[$targetClass][] = $metadataBuilder;
-                        } else {
-                            throw new LoaderException();
-                        }
-                    } else {
-                        throw new LoaderException('Invalid discrimination item');
+                $builder = $this->createMetadataBuilder($class, $parameters);
+                foreach ($map as $inheritClass => $inheritBuilder) {
+                    if (is_a($class, $inheritClass, true)) {
+                        $builder->inherits[] = $inheritBuilder;
                     }
                 }
-                if ($metadataBuilder->type !== null) {
-                    $result[$metadataBuilder->type] = $metadataBuilder;
+                if ($builder->type !== null) {
+                    $result[$builder->type] = $builder;
                 }
-                $map[$class] = $metadataBuilder;
-            } catch (LoaderException $e) {
-                throw new LoaderException($e->getMessage().' in '.$class, 0, $e);
+                $map[$class] = $builder;
+            } catch (BuilderException $e) {
+                throw new BuilderException($e->getMessage().' in `'.$class.'` ['.$file.']', 0, $e);
             }
         }
         return $result;
@@ -78,101 +89,59 @@ class MetadataBuilderFactory
      * @param string $class
      * @param array $parameters
      * @return MetadataBuilder
-     * @throws LoaderException
+     * @throws BuilderException
      */
     private function createMetadataBuilder(string $class, array $parameters): MetadataBuilder
     {
         try {
-            $builder = new MetadataBuilder($class);
+            $builder = new MetadataBuilder($class, $this->sortCallback);
             $identifiers = $parameters['identifiers'] ?? [];
             unset($parameters['identifiers']);
-            unset($parameters['meta']);
-            $fields = [];
+            $parameters['identifiers'] = $identifiers;
             foreach ($parameters as $parameter => $value) {
-                if ($parameter === 'type') {
-                    if (!is_string($value)) {
-                        throw new LoaderException('Invalid property `type` expected string');
-                    }
-                    if (false === preg_match('~^[a-zA-Z0-9_]$~', $value)) {
-                        throw new LoaderException('Invalid property `type` invalid type');
-                    }
-                    $builder->type = $value;
-                } elseif ($parameter === 'attributes' || $parameter === 'relationships') {
-                    $builder->{$parameter} = $this->factory[$parameter]->createFieldBuilderList($builder, $value);
-                    $fields = array_merge($fields, $builder->{$parameter});
-                } else {
-                    throw new LoaderException(sprintf('Undefined property `%s`', $parameter));
-                }
-            }
-            try {
-                $builder->identifiers = $this->normalizeIdentifiers($builder, $identifiers, $fields);
-            } catch (LoaderException $e) {
-                throw new LoaderException($e->getMessage().' in property identifier', 0, $e);
+                $this->buildProperty($builder, $parameter, $value);
             }
             return $builder;
-        } catch (LoaderException $e) {
-            throw new LoaderException($e->getMessage().' in class '.$class, 0, $e);
+        } catch (BuilderException $e) {
+            throw new BuilderException($e->getMessage().' in class `'.$class.'`', 0, $e);
         }
     }
 
     /**
      * @param MetadataBuilder $builder
-     * @param array $identifiers
-     * @param array $fields
-     * @return array
-     * @throws LoaderException
+     * @param $parameter
+     * @param $value
+     * @throws BuilderException
      */
-    private function normalizeIdentifiers(MetadataBuilder $builder, $identifiers, array $fields)
+    private function buildProperty(MetadataBuilder $builder, $parameter, $value): void
     {
-        if (is_array($identifiers)) {
-            $list = [];
-            foreach ($identifiers as $name => $value) {
-                if ($value === null) {
-                    $field = $fields[$name] ?? null;
-                    if ($field === null) {
-                        throw new LoaderException();
-                    }
-                } else {
-                    $field = $this->factory['attributes']->createFieldBuilder($builder, (string) $name, $value);
-                }
-                $list[$name] = $field;
+        if ($parameter === 'type') {
+            if (!is_string($value)) {
+                throw new BuilderException('Invalid property `type` expected string');
             }
-            return $list;
-        }
-        throw new LoaderException();
-    }
-
-    /**
-     * @param string[] $classes
-     * @return string[][]
-     */
-    private function getInheritMap(array $classes): array
-    {
-        $map = [];
-        foreach ($classes as $class) {
-            $map[$class] = [];
-            foreach ($classes as $inherit) {
-                if ($class !== $inherit && is_a($class, $inherit, true)) {
-                    $map[$class][] = $inherit;
+            if (false === preg_match('~^[a-zA-Z0-9_]$~', $value)) {
+                throw new BuilderException('Invalid property `type` invalid type');
+            }
+            $builder->type = $value;
+        } elseif ($parameter === 'discrimination') {
+            if (!is_array($value)) {
+                throw new BuilderException('Invalid property `discrimination` expected array');
+            }
+            foreach ($value as $item) {
+                if (!is_string($item)) {
+                    throw new BuilderException('Invalid property `discrimination` expected string list');
                 }
             }
+            $builder->discrimination = array_values($value);
+        } elseif ($parameter === 'attributes') {
+            $builder->attributes = $this->attributes->createFieldBuilderList($builder, $value);
+        } elseif ($parameter === 'relationships') {
+            $builder->relationships = $this->relationships->createFieldBuilderList($builder, $value);
+        } elseif ($parameter === 'identifiers') {
+            $builder->identifiers = $this->attributes->createIdentifierBuilderList($builder, $value);
+        } elseif ($parameter === 'meta') {
+        } else {
+            throw new BuilderException(sprintf('Undefined property `%s`', $parameter));
         }
-        return $map;
-    }
-
-    /**
-     * @param array $list
-     */
-    private function sortInherit(array &$list)
-    {
-        uksort($list, function (string $left, string $right) {
-            if ($left === $right) {
-                return 0;
-            } elseif (is_a($left, $right, true)) {
-                return 1;
-            } else {
-                return -1;
-            }
-        });
     }
 }

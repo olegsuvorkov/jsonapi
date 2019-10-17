@@ -23,6 +23,14 @@ class MultipleRelationshipTransformer implements TransformerInterface
     /**
      * @inheritDoc
      */
+    public function transformScalar($data, array $options)
+    {
+        throw new InvalidArgumentException('Invalid type');
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function getType(): string
     {
         return 'multiple_relationship';

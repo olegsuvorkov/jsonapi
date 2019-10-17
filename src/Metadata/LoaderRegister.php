@@ -5,6 +5,8 @@ namespace JsonApi\Metadata;
 
 
 use JsonApi\Loader\LoaderInterface;
+use JsonApi\Transformer\TransformerInterface;
+use JsonApi\Transformer\TransformerPool;
 
 class LoaderRegister implements RegisterInterface
 {
@@ -20,10 +22,14 @@ class LoaderRegister implements RegisterInterface
 
     /**
      * @param LoaderInterface $loader
+     * @param TransformerInterface[] $transformers
      */
-    public function __construct(LoaderInterface $loader)
+    public function __construct(LoaderInterface $loader, array $transformers)
     {
         $this->loader = $loader;
+        foreach ($transformers as $transformer) {
+            TransformerPool::add($transformer);
+        }
     }
 
     /**

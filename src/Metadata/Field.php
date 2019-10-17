@@ -3,6 +3,7 @@
 namespace JsonApi\Metadata;
 
 use JsonApi\Transformer\InvalidArgumentException;
+use JsonApi\Transformer\TransformerInterface;
 use JsonApi\Transformer\TransformerPool;
 
 /**
@@ -41,13 +42,17 @@ class Field implements FieldInterface
     private $type;
 
     /**
+     * @var TransformerInterface
+     */
+    private $transformer;
+
+    /**
      * @var array
      */
     private $options = [];
 
     /**
      * @param string $name
-     * @param string $type
      * @param bool $context
      * @param string|null $getter
      * @param string|null $setter
@@ -95,27 +100,11 @@ class Field implements FieldInterface
     }
 
     /**
-     * @param string $getter
-     */
-    public function setGetter(?string $getter): void
-    {
-        $this->getter = $getter;
-    }
-
-    /**
      * @return string|null
      */
     public function getSetter(): ?string
     {
         return $this->setter;
-    }
-
-    /**
-     * @param string|null $setter
-     */
-    public function setSetter(?string $setter): void
-    {
-        $this->setter = $setter;
     }
 
     public function getValue($object)
@@ -125,58 +114,52 @@ class Field implements FieldInterface
 
     /**
      * @param $object
-     * @param TransformerPool $pool
      * @return mixed
      * @throws InvalidArgumentException
      */
-    public function getNormalizeValue($object, TransformerPool $pool)
+    public function getNormalizeValue($object)
     {
         $value = $this->getValue($object);
         if ($value !== null) {
-            return $pool->get($this->type)->transform($value, $this->options);
+            $value = $this->transformer->transform($value, $this->options);
         }
         return $value;
     }
 
     /**
      * @param $object
-     * @param TransformerPool $pool
      * @return mixed|string
      * @throws InvalidArgumentException
      */
-    public function getScalarValue($object, TransformerPool $pool)
+    public function getScalarValue($object)
     {
         $value = $this->getValue($object);
-        $metadata = $this->options['target'] ?? null;
         if ($value !== null) {
-            if ($metadata instanceof MetadataInterface) {
-                $value = $metadata->getId($value, $pool);
-            } else {
-                $value = $this->getNormalizeValue($object, $pool);
-            }
+            $value = $this->transformer->transformScalar($value, $this->options);
         }
         return $value;
     }
+//
+//    /**
+//     * @return string
+//     */
+//    public function getType(): string
+//    {
+//        return $this->type;
+//    }
 
     /**
-     * @return string
+     * @param TransformerInterface $transformer
      */
-    public function getType(): string
+    public function setTransformer(TransformerInterface $transformer): void
     {
-        return $this->type;
-    }
-
-    /**
-     * @param string $type
-     */
-    public function setType(string $type): void
-    {
-        $this->type = $type;
+        $this->transformer = $transformer;
+        $this->type = $transformer->getType();
     }
 
     /**
      * @param string $name
-     * @param mixed $default
+     * @param mixed  $default
      * @return mixed
      */
     public function getOption(string $name, $default = null)
@@ -213,5 +196,22 @@ class Field implements FieldInterface
      */
     public function __sleep()
     {
+        return [
+            'name',
+            'serializeName',
+            'context',
+            'getter',
+            'setter',
+            'type',
+            'options'
+        ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function __wakeup()
+    {
+        $this->transformer = TransformerPool::get($this->type);
     }
 }

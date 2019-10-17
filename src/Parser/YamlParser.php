@@ -37,6 +37,7 @@ class YamlParser implements ParserInterface
                 if (!is_array($parameters)) {
                     throw new LoaderException();
                 }
+                $parameters['file'] = $this->file;
                 $data[ltrim($class, '\\')] = $parameters;
             }
         }

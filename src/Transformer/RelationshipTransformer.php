@@ -10,16 +10,6 @@ use JsonApi\Metadata\MetadataInterface;
 class RelationshipTransformer implements TransformerInterface
 {
     /**
-     * @var TransformerPool
-     */
-    private $pool;
-
-    public function __construct(TransformerPool $pool)
-    {
-        $this->pool = $pool;
-    }
-
-    /**
      * @inheritDoc
      */
     public function getType(): string
@@ -30,13 +20,21 @@ class RelationshipTransformer implements TransformerInterface
     /**
      * @inheritDoc
      */
+    public function transformScalar($data, array $options)
+    {
+        return $options['target']->getOriginalMetadata($data)->getId($data);
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function transform($data, array $options)
     {
         /** @var MetadataInterface $metadata */
-        $metadata = $options['target'];
+        $metadata = $options['target']->getOriginalMetadata($data);
         return [
-            'id'    => $metadata->getId($data, $this->pool),
-            'type'  => $metadata->getTypeByObject($data),
+            'id'    => $metadata->getId($data),
+            'type'  => $metadata->getType(),
         ];
     }
 

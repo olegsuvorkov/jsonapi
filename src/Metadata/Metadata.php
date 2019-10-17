@@ -2,8 +2,6 @@
 
 namespace JsonApi\Metadata;
 
-use JsonApi\Transformer\TransformerPool;
-
 /**
  * @package JsonApi\ClassMetadata
  */
@@ -35,12 +33,12 @@ class Metadata implements MetadataInterface
     private $relationships = [];
 
     /**
-     * @var Metadata[]
+     * @var MetadataInterface[]
      */
     private $discriminatorMap = [];
 
     /**
-     * @var Metadata|null
+     * @var MetadataInterface|null
      */
     private $parent;
 
@@ -86,14 +84,19 @@ class Metadata implements MetadataInterface
     /**
      * @inheritDoc
      */
-    public function getTypeByObject($object): string
+    public function getDiscrimination(): array
+    {
+        return $this->discriminatorMap;
+    }
+
+    public function getOriginalMetadata($object): MetadataInterface
     {
         foreach ($this->discriminatorMap as $discrimination) {
             if ($discrimination->isInstance($object)) {
-                return $discrimination->getTypeByObject($object);
+                return $discrimination->getOriginalMetadata($object);
             }
         }
-        return $this->type;
+        return $this;
     }
 
     /**
@@ -118,6 +121,29 @@ class Metadata implements MetadataInterface
     public function getRelationships(): array
     {
         return $this->relationships;
+    }
+
+
+
+    public function findRelationships(string $serializeName)
+    {
+        if ($this->discriminatorMap) {
+            foreach ($this->discriminatorMap as $discrimination) {
+                yield from $discrimination->findRelationships($serializeName);
+            }
+        } else {
+            foreach ($this->relationships as $relationship) {
+                if ($relationship->getSerializeName() === $serializeName) {
+                    yield $relationship;
+                    break;
+                }
+            }
+        }
+    }
+
+    public function containsRelationship(FieldInterface $field): bool
+    {
+        return in_array($field, $this->relationships, true);
     }
 
     /**
@@ -158,19 +184,20 @@ class Metadata implements MetadataInterface
      */
     public function isInstance($object): bool
     {
-        return is_a($object, $this->class, true);
+        return is_a($object, $this->class, true) && empty($this->discriminatorMap);
     }
 
     /**
      * @inheritDoc
      */
-    public function getId($object, TransformerPool $pool): string
+    public function getId($object): string
     {
         $id = '';
-        foreach ($this->identifiers as $identifier) {
-            $id.= ':'.($identifier->getScalarValue($object, $pool) ?? '');
+        foreach ($this->identifiers as $i => $identifier) {
+            $id.= $i ? ':' : '';
+            $id.= $identifier->getScalarValue($object);
         }
-        return substr($id, 1);
+        return $id;
     }
 
     /**

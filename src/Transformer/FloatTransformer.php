@@ -5,7 +5,7 @@ namespace JsonApi\Transformer;
 /**
  * @package JsonApi\Transformer
  */
-class FloatTransformer implements TransformerInterface
+class FloatTransformer extends Transformer
 {
     /**
      * @inheritDoc
@@ -24,12 +24,5 @@ class FloatTransformer implements TransformerInterface
             return (float) $data;
         }
         throw new InvalidArgumentException('expected float');
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function reverseTransform($data, array $options)
-    {
     }
 }

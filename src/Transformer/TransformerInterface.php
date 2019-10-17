@@ -18,6 +18,14 @@ interface TransformerInterface
      * @return mixed
      * @throws InvalidArgumentException
      */
+    public function transformScalar($data, array $options);
+
+    /**
+     * @param mixed $data
+     * @param array $options
+     * @return mixed
+     * @throws InvalidArgumentException
+     */
     public function transform($data, array $options);
 
     /**

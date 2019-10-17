@@ -2,6 +2,8 @@
 
 namespace JsonApi\Loader;
 
+use JsonApi\Exception\LoaderException;
+use JsonApi\MetadataBuilder\BuilderException;
 use JsonApi\MetadataBuilder\MetadataBuilderFactory;
 use JsonApi\Parser\ParserInterface;
 
@@ -35,15 +37,14 @@ class ParserLoader implements LoaderInterface
      */
     public function load(): array
     {
-        $data = [];
-        foreach ($this->parsers as $parser) {
-            $parser->load($data);
+        try {
+            $data = [];
+            foreach ($this->parsers as $parser) {
+                $parser->load($data);
+            }
+            return $this->metadataBuilderFactory->createMetadataList($data);
+        } catch (BuilderException $e) {
+            throw new LoaderException($e->getMessage(), 0, $e);
         }
-        $map = $this->metadataBuilderFactory->createMetadataBuilderList($data);
-        $result = [];
-        foreach ($map as $type => $metadataBuilder) {
-            $result[$type] = $metadataBuilder->getMetadata($map);
-        }
-        return array_reverse($result);
     }
 }

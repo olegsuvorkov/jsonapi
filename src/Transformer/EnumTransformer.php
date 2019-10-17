@@ -5,7 +5,7 @@ namespace JsonApi\Transformer;
 /**
  * @package JsonApi\Transformer
  */
-class EnumTransformer implements TransformerInterface
+class EnumTransformer extends Transformer
 {
     /**
      * @inheritDoc
@@ -24,12 +24,5 @@ class EnumTransformer implements TransformerInterface
             return $data;
         }
         throw new InvalidArgumentException('Expected `'.implode('`, `', $options['choices']).'`');
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function reverseTransform($data, array $options)
-    {
     }
 }

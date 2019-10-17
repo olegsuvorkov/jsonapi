@@ -2,9 +2,8 @@
 
 namespace JsonApi\MetadataBuilder;
 
-use JsonApi\Exception\LoaderException;
 use JsonApi\Metadata\Field;
-use JsonApi\TransformerConfigurator\TransformerConfiguratorInterface;
+use JsonApi\MetadataBuilder\Configurator\ConfiguratorInterface;
 
 /**
  * @package JsonApi\MetadataBuilder
@@ -52,7 +51,7 @@ class FieldBuilder
     private $metadataBuilder;
 
     /**
-     * @var TransformerConfiguratorInterface
+     * @var ConfiguratorInterface
      */
     private $configurator;
 
@@ -63,12 +62,12 @@ class FieldBuilder
 
     /**
      * @param string $name
-     * @param TransformerConfiguratorInterface $configurator
+     * @param ConfiguratorInterface $configurator
      * @param MetadataBuilder $metadataBuilder
      */
     public function __construct(
         string $name,
-        TransformerConfiguratorInterface $configurator,
+        ConfiguratorInterface $configurator,
         MetadataBuilder $metadataBuilder
     ) {
         $this->name            = $name;
@@ -79,7 +78,7 @@ class FieldBuilder
     /**
      * @param array $map
      * @return Field
-     * @throws LoaderException
+     * @throws BuilderException
      */
     public function getField(array $map)
     {
@@ -88,9 +87,9 @@ class FieldBuilder
             $setter = $this->write ? $this->getMethods($this->setter, ['set', 'setIs', 'setHas']) : null;
             $this->field = new Field($this->name, $this->context, $getter, $setter);
             try {
-                $this->configurator->configure($this->field, $this, $map);
-            } catch (LoaderException $e) {
-                throw new LoaderException($e->getMessage().' in field '.$this->name, 0, $e);
+                $this->configurator->configure($this->field, $this->options, $map);
+            } catch (BuilderException $e) {
+                throw new BuilderException($e->getMessage().' in field '.$this->name, 0, $e);
             }
         }
         return $this->field;
@@ -100,7 +99,7 @@ class FieldBuilder
      * @param string|null $method
      * @param array $prefixes
      * @return string
-     * @throws LoaderException
+     * @throws BuilderException
      */
     private function getMethods(?string $method, array $prefixes): string
     {
@@ -111,6 +110,13 @@ class FieldBuilder
                 $method[] = $prefix.$suffix;
             }
         }
-        return $this->metadataBuilder->getMethod($method);
+        $methods = (array) $method;
+        $reflectionClass = $this->metadataBuilder->reflectionClass;
+        foreach ($methods as $method) {
+            if ($reflectionClass->hasMethod($method)) {
+                return $method;
+            }
+        }
+        throw BuilderException::invalidMethods($reflectionClass->getName(), $methods);
     }
 }

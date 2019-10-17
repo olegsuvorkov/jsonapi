@@ -2,8 +2,8 @@
 
 namespace JsonApi\DependencyInjection\Compiler;
 
-use JsonApi\Transformer\TransformerPool;
-use JsonApi\TransformerConfigurator\AttributeTransformerConfigurator;
+use JsonApi\Metadata\LoaderRegister;
+use JsonApi\MetadataBuilder\Configurator\AttributeConfigurator;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -21,13 +21,12 @@ class TransformerCompilerPass implements CompilerPassInterface
      */
     public function process(ContainerBuilder $container)
     {
-        $poolDefinition = $container->getDefinition(TransformerPool::class);
         $serviceIds = array_keys($container->findTaggedServiceIds(self::TAG_TRANSFORMER));
+        $transformers = [];
         foreach ($serviceIds as $serviceId) {
-            $poolDefinition->addMethodCall(
-                'add', [new Reference($serviceId)]
-            );
+            $transformers[] = new Reference($serviceId);
         }
+        $container->getDefinition(LoaderRegister::class)->replaceArgument(1, $transformers);
         $attributes = [];
         foreach ($container->findTaggedServiceIds(self::TAG_TRANSFORMER_CONFIGURATOR) as $serviceId => $tags) {
             foreach ($tags as $tag) {
@@ -42,7 +41,7 @@ class TransformerCompilerPass implements CompilerPassInterface
                 }
             }
         }
-        $attributesTransformer = $container->getDefinition(AttributeTransformerConfigurator::class);
+        $attributesTransformer = $container->getDefinition(AttributeConfigurator::class);
         $attributesTransformer->replaceArgument(0, $attributes);
     }
 }

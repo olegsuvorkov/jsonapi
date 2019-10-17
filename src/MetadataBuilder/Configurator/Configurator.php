@@ -1,15 +1,15 @@
 <?php
 
-namespace JsonApi\TransformerConfigurator;
+namespace JsonApi\MetadataBuilder\Configurator;
 
 use JsonApi\Metadata\Field;
 use JsonApi\MetadataBuilder\FieldBuilder;
 use JsonApi\Transformer\TransformerInterface;
 
 /**
- * @package JsonApi\TransformerConfigurator
+ * @package JsonApi\MetadataBuilder\Configurator
  */
-class ScalarTransformerConfigurator implements TransformerConfiguratorInterface
+class Configurator implements ConfiguratorInterface
 {
     /**
      * @var TransformerInterface
@@ -27,8 +27,8 @@ class ScalarTransformerConfigurator implements TransformerConfiguratorInterface
     /**
      * @inheritDoc
      */
-    public function configure(Field $field, FieldBuilder $fieldBuilder, array $map): void
+    public function configure(Field $field, array $options, array $map): void
     {
-        $field->setType($this->transformer->getType());
+        $field->setTransformer($this->transformer);
     }
 }

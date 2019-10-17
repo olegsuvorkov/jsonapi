@@ -2,6 +2,7 @@
 
 namespace JsonApi;
 
+use JsonApi\DependencyInjection\Compiler\RoutingCompilerPass;
 use JsonApi\DependencyInjection\Compiler\TransformerCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
@@ -17,5 +18,6 @@ class JsonApiBundle extends Bundle
     public function build(ContainerBuilder $container)
     {
         $container->addCompilerPass(new TransformerCompilerPass());
+        $container->addCompilerPass(new RoutingCompilerPass());
     }
 }
