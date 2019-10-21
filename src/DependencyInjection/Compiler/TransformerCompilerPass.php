@@ -2,8 +2,11 @@
 
 namespace JsonApi\DependencyInjection\Compiler;
 
+use JsonApi\Controller\ControllerInterface;
 use JsonApi\Metadata\LoaderRegister;
+use JsonApi\Metadata\RegisterFactory;
 use JsonApi\MetadataBuilder\Configurator\AttributeConfigurator;
+use JsonApi\Transformer\TransformerInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -13,35 +16,53 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 class TransformerCompilerPass implements CompilerPassInterface
 {
-    const TAG_TRANSFORMER              = 'json_api.transformer';
-    const TAG_TRANSFORMER_CONFIGURATOR = 'json_api.transformer_configurator';
+    private const TAG = 'json_api.transformer';
+
+
+    /**
+     * @param ContainerBuilder $container
+     */
+    public static function registerAutoconfiguration(ContainerBuilder $container): void
+    {
+        $container
+            ->registerForAutoconfiguration(TransformerInterface::class)
+            ->addTag(self::TAG);
+    }
 
     /**
      * @inheritDoc
      */
     public function process(ContainerBuilder $container)
     {
-        $serviceIds = array_keys($container->findTaggedServiceIds(self::TAG_TRANSFORMER));
+        $serviceIds = array_keys($container->findTaggedServiceIds(self::TAG));
         $transformers = [];
         foreach ($serviceIds as $serviceId) {
             $transformers[] = new Reference($serviceId);
         }
-        $container->getDefinition(LoaderRegister::class)->replaceArgument(1, $transformers);
+        $container->getDefinition(RegisterFactory::class)->replaceArgument(2, $transformers);
         $attributes = [];
-        foreach ($container->findTaggedServiceIds(self::TAG_TRANSFORMER_CONFIGURATOR) as $serviceId => $tags) {
+        foreach ($this->findTaggedServiceMap($container, 'json_api.transformer_configurator') as $type => $serviceId) {
+            $attributes[$type] = new Reference($serviceId);
+        }
+        $container->getDefinition(AttributeConfigurator::class)->replaceArgument(0, $attributes);
+    }
+
+    private function findTaggedServiceMap(ContainerBuilder $container, string $name): array
+    {
+        $list = [];
+        foreach ($container->findTaggedServiceIds($name) as $serviceId => $tags) {
             foreach ($tags as $tag) {
                 if (isset($tag['type'])) {
-                    $attributes[$tag['type']] = new Reference($serviceId);
+                    $list[$tag['type']] = $serviceId;
                 } else {
                     throw new \InvalidArgumentException(sprintf(
                         'The name is not defined in the "%s" tag for the service "%s"',
-                        self::TAG_TRANSFORMER_CONFIGURATOR,
+                        $name,
                         $serviceId
                     ));
                 }
             }
         }
-        $attributesTransformer = $container->getDefinition(AttributeConfigurator::class);
-        $attributesTransformer->replaceArgument(0, $attributes);
+        return $list;
     }
 }

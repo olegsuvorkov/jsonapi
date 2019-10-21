@@ -3,6 +3,7 @@
 namespace JsonApi\MetadataBuilder;
 
 use JsonApi\Metadata\FieldInterface;
+use JsonApi\SecurityStrategy\SecurityStrategyBuilderPool;
 
 /**
  * @package JsonApi\MetadataBuilder
@@ -25,16 +26,26 @@ class MetadataBuilderFactory
     private $sortCallback;
 
     /**
+     * @var SecurityStrategyBuilderPool
+     */
+    private $securityStrategyBuilderPool;
+
+    /**
      * @param FieldBuilderFactory $attributes
      * @param FieldBuilderFactory $relationships
+     * @param SecurityStrategyBuilderPool $securityStrategyBuilderPool
      */
-    public function __construct(FieldBuilderFactory $attributes, FieldBuilderFactory $relationships)
-    {
+    public function __construct(
+        FieldBuilderFactory $attributes,
+        FieldBuilderFactory $relationships,
+        SecurityStrategyBuilderPool $securityStrategyBuilderPool
+    ) {
         $this->attributes = $attributes;
         $this->relationships = $relationships;
         $this->sortCallback = function (FieldInterface $left, FieldInterface $right) {
             return $left->getSerializeName() <=> $right->getSerializeName();
         };
+        $this->securityStrategyBuilderPool = $securityStrategyBuilderPool;
     }
 
     /**
@@ -63,6 +74,7 @@ class MetadataBuilderFactory
             return is_a($left, $right, true) ? 1 : -1;
         });
         $map = [];
+        /** @var MetadataBuilder[] $result */
         $result = [];
         foreach ($list as $class => $parameters) {
             $file = $parameters['file'] ?? null;
@@ -82,6 +94,15 @@ class MetadataBuilderFactory
                 throw new BuilderException($e->getMessage().' in `'.$class.'` ['.$file.']', 0, $e);
             }
         }
+        foreach ($result as $type => $builder) {
+            foreach ($builder->discrimination as $discrimination) {
+                if (isset($result[$discrimination])) {
+                    $result[$discrimination]->parent = $builder;
+                } else {
+                    throw new BuilderException();
+                }
+            }
+        }
         return $result;
     }
 
@@ -98,6 +119,9 @@ class MetadataBuilderFactory
             $identifiers = $parameters['identifiers'] ?? [];
             unset($parameters['identifiers']);
             $parameters['identifiers'] = $identifiers;
+            $constructorArguments = $parameters['constructor_arguments'] ?? [];
+            unset($parameters['constructor_arguments']);
+            $parameters['constructor_arguments'] = $constructorArguments;
             foreach ($parameters as $parameter => $value) {
                 $this->buildProperty($builder, $parameter, $value);
             }
@@ -115,7 +139,15 @@ class MetadataBuilderFactory
      */
     private function buildProperty(MetadataBuilder $builder, $parameter, $value): void
     {
-        if ($parameter === 'type') {
+        if ($parameter === 'security') {
+            [$strategy, $options] = $this->securityStrategyBuilderPool->configureSecurity($value);
+            $builder->securityStrategy = $strategy;
+            $builder->securityOptions = $options;
+        } elseif ($parameter === 'security_normalize') {
+            [$strategy, $options] = $this->securityStrategyBuilderPool->configureSecurity($value);
+            $builder->securityNormalizeStrategy = $strategy;
+            $builder->securityNormalizeOptions = $options;
+        } elseif ($parameter === 'type') {
             if (!is_string($value)) {
                 throw new BuilderException('Invalid property `type` expected string');
             }
@@ -139,6 +171,11 @@ class MetadataBuilderFactory
             $builder->relationships = $this->relationships->createFieldBuilderList($builder, $value);
         } elseif ($parameter === 'identifiers') {
             $builder->identifiers = $this->attributes->createIdentifierBuilderList($builder, $value);
+        } elseif ($parameter === 'constructor_arguments') {
+            if ($value !== null) {
+                $constructorArguments = $this->attributes->createConstructorArgumentsBuilderList($builder, $value);
+                $builder->constructorArguments = $constructorArguments;
+            }
         } elseif ($parameter === 'meta') {
         } else {
             throw new BuilderException(sprintf('Undefined property `%s`', $parameter));

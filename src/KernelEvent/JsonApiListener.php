@@ -8,12 +8,11 @@ use JsonApi\Exception\ParseUrlException;
 use JsonApi\Metadata\ContextRegisterFactory;
 use JsonApi\Metadata\UndefinedMetadataException;
 use JsonApi\Serializer\Encoder\JsonVndApiEncoder;
+use Symfony\Component\Debug\Exception\FlattenException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Translation\Translator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -67,6 +66,9 @@ class JsonApiListener implements EventSubscriberInterface
     public function onKernelRequest(RequestEvent $event)
     {
         $request = $event->getRequest();
+        if ($request->attributes->get('exception') instanceof FlattenException) {
+            return;
+        }
         if (0 !== strncmp($request->getPathInfo(), $this->prefix, strlen($this->prefix))) {
             return;
         }
@@ -81,28 +83,25 @@ class JsonApiListener implements EventSubscriberInterface
         $locale  = $request->getPreferredLanguage($this->translator->getFallbackLocales());
         $request->setLocale($locale);
         $this->translator->setLocale($locale);
-        if ($request->isMethod(Request::METHOD_GET)) {
-            $fields = $request->query->get('fields');
-            $contextRegister  = $this->contextRegisterFactory->createContextRegister($fields);
-            $request->attributes->set('contextRegister', $contextRegister);
-            $type = $request->attributes->get('type', '');
-            try {
-                $metadata = $contextRegister->getByType($type);
-            } catch (UndefinedMetadataException $e) {
-                $event->setResponse(new JsonResponse([
-                    'errors' => [
-                        'title' => 'Undefined type',
-                        'status' => Response::HTTP_BAD_REQUEST,
+        $fields = $request->query->get('fields');
+        $contextRegister  = $this->contextRegisterFactory->createContextRegister($fields);
+        $type = $request->attributes->get('type', '');
+        try {
+            $metadata = $contextRegister->getByType($type);
+        } catch (UndefinedMetadataException $e) {
+            $event->setResponse(new JsonResponse([
+                'errors' => [
+                    'title' => 'Undefined type',
+                    'status' => Response::HTTP_BAD_REQUEST,
 
-                    ]
-                ], Response::HTTP_BAD_REQUEST));
-                return;
-            }
-            $contextIncludeBuilder = new ContextIncludeBuilder($contextRegister, $type);
-            $contextInclude = $contextIncludeBuilder->build($request->query->get('include', ''));
-            $request->attributes->set('contextInclude', $contextInclude);
-            $request->attributes->set('context', new Context($metadata, $contextInclude, $contextRegister));
+                ]
+            ], Response::HTTP_BAD_REQUEST));
+            return;
         }
+        $contextIncludeBuilder = new ContextIncludeBuilder($contextRegister, $type);
+        $contextInclude = $contextIncludeBuilder->build($request->query->get('include', ''));
+        $request->attributes->set('context', new Context($metadata, $contextInclude, $contextRegister));
+        $request->attributes->set('securityStrategy', $metadata->getSecurity());
     }
 
     public function onKernelException(ExceptionEvent $event)

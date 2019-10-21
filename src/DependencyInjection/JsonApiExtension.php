@@ -2,8 +2,8 @@
 
 namespace JsonApi\DependencyInjection;
 
-use JsonApi\Controller\ControllerInterface;
 use JsonApi\DependencyInjection\Compiler\RoutingCompilerPass;
+use JsonApi\DependencyInjection\Compiler\SecurityStrategyCompilerPass;
 use JsonApi\DependencyInjection\Compiler\TransformerCompilerPass;
 use JsonApi\DependencyInjection\Configuration\JsonApiConfiguration;
 use JsonApi\KernelEvent\JsonApiListener;
@@ -12,7 +12,6 @@ use JsonApi\Loader\ParserLoader;
 use JsonApi\Metadata\LoaderRegister;
 use JsonApi\Parser\YamlParser;
 use JsonApi\Router\RouteLoader;
-use JsonApi\Transformer\TransformerInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -29,14 +28,9 @@ class JsonApiExtension extends Extension
      */
     public function load(array $configs, ContainerBuilder $container)
     {
-        $container
-            ->registerForAutoconfiguration(TransformerInterface::class)
-            ->addTag(TransformerCompilerPass::TAG_TRANSFORMER);
-
-        $container
-            ->registerForAutoconfiguration(ControllerInterface::class)
-            ->addTag(RoutingCompilerPass::TAG_CONTROLLER);
-
+        RoutingCompilerPass::registerAutoconfiguration($container);
+        SecurityStrategyCompilerPass::registerAutoconfiguration($container);
+        TransformerCompilerPass::registerAutoconfiguration($container);
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../../config'));
         $loader->load('metadata.xml');
         $loader->load('serializer.xml');
@@ -62,6 +56,7 @@ class JsonApiExtension extends Extension
             $cacheLoaderDefinition->replaceArgument(0, $config['cache_key']);
             $container->getDefinition(LoaderRegister::class)->replaceArgument(0, $cacheLoaderDefinition);
         }
+        $container->setParameter('json_api_name_prefix', $config['name_prefix']);
         $container
             ->getDefinition(RouteLoader::class)
             ->replaceArgument(0, $config['path_prefix'])

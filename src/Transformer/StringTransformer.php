@@ -18,6 +18,23 @@ class StringTransformer extends Transformer
     /**
      * @inheritDoc
      */
+    public function reverseTransformScalar(array &$ids, array $options)
+    {
+        $value = next($ids);
+        if ($value === false) {
+            throw new InvalidArgumentException();
+        }
+        next($ids);
+        if ($value === '') {
+            return null;
+        } else {
+            return $value;
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function transform($data, array $options)
     {
         if (is_string($data)) {

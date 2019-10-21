@@ -61,6 +61,26 @@ class FieldBuilderFactory implements FieldBuilderFactoryInterface
     }
 
     /**
+     * @inheritDoc
+     */
+    public function createConstructorArgumentsBuilderList(MetadataBuilder $builder, $fields): array
+    {
+        if (is_array($fields)) {
+            $list = [];
+            foreach ($fields as $name) {
+                $field = $builder->attributes[$name] ?? $builder->relationships[$name] ?? null;
+                if ($field !== null) {
+                    $list[$name] = $field;
+                } else {
+                    throw new BuilderException();
+                }
+            }
+            return $list;
+        }
+        throw new BuilderException();
+    }
+
+    /**
      * @param MetadataBuilder $metadataBuilder
      * @param $name
      * @param $parameters

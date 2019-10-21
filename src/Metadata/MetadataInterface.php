@@ -2,6 +2,8 @@
 
 namespace JsonApi\Metadata;
 
+use JsonApi\SecurityStrategy\SecurityStrategyBuilderPool;
+use JsonApi\SecurityStrategy\SecurityStrategyInterface;
 use JsonApi\Transformer\InvalidArgumentException;
 
 /**
@@ -9,6 +11,11 @@ use JsonApi\Transformer\InvalidArgumentException;
  */
 interface MetadataInterface
 {
+    /**
+     * @param SecurityStrategyBuilderPool $securityPool
+     */
+    public function initializeSecurity(SecurityStrategyBuilderPool $securityPool): void;
+
     /**
      * @return string
      */
@@ -20,6 +27,13 @@ interface MetadataInterface
     public function getType(): string;
 
     /**
+     * @return FieldInterface[]
+     */
+    public function getConstructorArguments(): array;
+
+    public function isConstructorArgument(FieldInterface $field): bool;
+
+    /**
      * @return MetadataInterface[]
      */
     public function getDiscrimination(): array;
@@ -29,6 +43,23 @@ interface MetadataInterface
      * @return MetadataInterface
      */
     public function getOriginalMetadata($object): MetadataInterface;
+
+    /**
+     * @param string $type
+     * @return MetadataInterface
+     */
+    public function getMetadataByType(string $type): MetadataInterface;
+
+    /**
+     * @return object
+     */
+    public function newInstanceWithoutConstructor();
+    /**
+     * @param $object
+     * @param array $arguments
+     * @return object
+     */
+    public function invokeConstructor($object, array $arguments = []);
 
     /**
      * @return FieldInterface[]
@@ -51,6 +82,8 @@ interface MetadataInterface
      */
     public function findRelationships(string $serializeName);
 
+    public function getRelationship(string $serializeName): ?FieldInterface;
+
     /**
      * @param FieldInterface $field
      * @return bool
@@ -63,6 +96,41 @@ interface MetadataInterface
      * @throws InvalidArgumentException
      */
     public function getId($object): string;
+
+    /**
+     * @param string $id
+     * @return array
+     */
+    public function reverseId($id): array;
+
+    /**
+     * @param string $id
+     * @param int|null $length
+     * @return bool
+     */
+    public function isNew(string $id, int &$length = null): bool;
+
+    /**
+     * @param string $id
+     * @return int|null
+     */
+    public function getNewIdentifier(string $id): ?int;
+
+    /**
+     * @param array $ids
+     * @return array
+     */
+    public function reverseTransformId(array &$ids): array;
+
+    /**
+     * @return SecurityStrategyInterface
+     */
+    public function getSecurity(): SecurityStrategyInterface;
+
+    /**
+     * @return SecurityStrategyInterface
+     */
+    public function getSecurityNormalize(): SecurityStrategyInterface;
 
     /**
      * @return MetadataInterface|null

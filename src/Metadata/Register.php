@@ -29,7 +29,7 @@ class Register implements RegisterInterface
                 return $metadata;
             }
         }
-        throw UndefinedMetadataException::notFindByClass($class);
+        throw UndefinedMetadataException::notFindByClass(is_object($class) ? get_class($class) : $class);
     }
 
     /**

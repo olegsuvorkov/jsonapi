@@ -1,35 +1,28 @@
 <?php
 
-
 namespace JsonApi\Metadata;
 
-
-use JsonApi\Loader\LoaderInterface;
-use JsonApi\Transformer\TransformerInterface;
-use JsonApi\Transformer\TransformerPool;
-
+/**
+ * @package JsonApi\Metadata
+ */
 class LoaderRegister implements RegisterInterface
 {
-    /**
-     * @var LoaderInterface
-     */
-    private $loader;
-
     /**
      * @var RegisterInterface|null
      */
     private $original = null;
 
     /**
-     * @param LoaderInterface $loader
-     * @param TransformerInterface[] $transformers
+     * @var RegisterFactoryInterface
      */
-    public function __construct(LoaderInterface $loader, array $transformers)
+    private $registerFactory;
+
+    /**
+     * @param RegisterFactoryInterface $registerFactory
+     */
+    public function __construct(RegisterFactoryInterface $registerFactory)
     {
-        $this->loader = $loader;
-        foreach ($transformers as $transformer) {
-            TransformerPool::add($transformer);
-        }
+        $this->registerFactory = $registerFactory;
     }
 
     /**
@@ -51,7 +44,7 @@ class LoaderRegister implements RegisterInterface
     private function getOriginal(): RegisterInterface
     {
         if ($this->original === null) {
-            $this->original = new Register($this->loader->load());
+            $this->original = $this->registerFactory->createRegister();
         }
         return $this->original;
     }

@@ -33,6 +33,17 @@ interface FieldInterface
     public function getNormalizeValue($object);
 
     /**
+     * @param array $data
+     * @return object|object[]|null
+     */
+    public function denormalize(array $data);
+
+    public function setDenormalizeValue($object, array $data): void;
+
+
+    public function parseScalarValue(array &$data, array &$ids);
+
+    /**
      * @param $object
      * @return mixed
      * @throws InvalidArgumentException

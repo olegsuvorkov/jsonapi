@@ -26,6 +26,27 @@ class BoolTransformer extends Transformer
     /**
      * @inheritDoc
      */
+    public function reverseTransformScalar(array &$ids, array $options)
+    {
+        $value = current($ids);
+        if ($value === false) {
+            throw new InvalidArgumentException();
+        }
+        next($ids);
+        if ($value === '') {
+            return null;
+        } elseif ($value === '1') {
+            return true;
+        } elseif ($value === '0') {
+            return false;
+        } else {
+            throw new InvalidArgumentException('Expected bool');
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function transform($data, array $options)
     {
         if (is_bool($data)) {

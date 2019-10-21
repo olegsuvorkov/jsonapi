@@ -33,9 +33,9 @@ class RouteLoader
      */
     public function __construct(string $path, string $name, array $controllerList)
     {
-        $this->controllerList = $controllerList;
         $this->path = $path;
         $this->name = $name;
+        $this->controllerList = $controllerList;
     }
 
     /**
@@ -59,6 +59,19 @@ class RouteLoader
             ], [
                 'id' => '[^/]+'
             ], [], null, [], ['GET']));
+            $collection->add($name.'relationships', new Route($prefix.'/{id}/relationships/{relationship}', [
+                '_controller' => $class.'::relationships',
+                'type'        => $type,
+            ], [
+                'id' => '[^/]+',
+                'relationship' => '[^/]+',
+            ], [], null, [], ['GET']));
+            $collection->add($name.'create', new Route($prefix, [
+                '_controller' => $class.'::create',
+                'type'        => $type,
+            ], [
+                'id' => '[^/]+',
+            ], [], null, [], ['POST']));
         }
         return $collection;
     }

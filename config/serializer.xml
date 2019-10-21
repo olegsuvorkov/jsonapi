@@ -5,6 +5,10 @@
                         http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <defaults public="false"/>
+        <service id="JsonApi\DataStorage\DataStorage">
+            <argument type="service" id="doctrine"/>
+        </service>
+        <service id="JsonApi\DataStorage\DataStorageInterface" alias="JsonApi\DataStorage\DataStorage"/>
         <!-- BEGIN TRANSFORMER -->
         <service id="JsonApi\Transformer\BoolTransformer">
             <tag name="json_api.transformer"/>
@@ -19,10 +23,13 @@
             <tag name="json_api.transformer"/>
         </service>
         <service id="JsonApi\Transformer\MultipleRelationshipTransformer">
+            <argument type="service" id="JsonApi\DataStorage\DataStorageInterface"/>
             <argument type="service" id="JsonApi\Transformer\RelationshipTransformer"/>
             <tag name="json_api.transformer"/>
         </service>
         <service id="JsonApi\Transformer\RelationshipTransformer">
+            <argument type="service" id="JsonApi\DataStorage\DataStorageInterface"/>
+            <argument type="service" id="doctrine"/>
             <tag name="json_api.transformer"/>
         </service>
         <service id="JsonApi\Transformer\StringTransformer">
@@ -31,10 +38,14 @@
         <!-- END TRANSFORMER -->
 
         <service id="JsonApi\Serializer\Encoder\JsonVndApiEncoder">
-            <argument type="service" id="JsonApi\Metadata\ContextRegisterFactory"/>
             <tag name="serializer.encoder" priority="1000"/>
         </service>
+        <service id="JsonApi\Serializer\Normalizer\DataNormalizer">
+            <tag name="serializer.normalizer" priority="1001"/>
+        </service>
         <service id="JsonApi\Serializer\Normalizer\MetadataNormalizer">
+            <argument type="service" id="JsonApi\DataStorage\DataStorageInterface"/>
+            <argument type="service" id="JsonApi\Metadata\RegisterInterface"/>
             <tag name="serializer.normalizer" priority="1000"/>
         </service>
         <service id="JsonApi\Metadata\ContextRegisterFactory">

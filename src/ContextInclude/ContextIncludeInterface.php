@@ -13,10 +13,10 @@ interface ContextIncludeInterface
     /**
      * @param MetadataInterface $metadata
      * @param $object
-     * @param IncludeStackInterface $stack
+     * @param array $stack
      * @return void
      */
-    public function register(MetadataInterface $metadata, $object, IncludeStackInterface $stack);
+    public function register(MetadataInterface $metadata, $object, array &$stack);
 
     /**
      * @param FieldInterface $field

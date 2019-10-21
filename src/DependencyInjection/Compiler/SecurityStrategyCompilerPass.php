@@ -2,8 +2,8 @@
 
 namespace JsonApi\DependencyInjection\Compiler;
 
-use JsonApi\Controller\ControllerInterface;
-use JsonApi\Router\RouteLoader;
+use JsonApi\SecurityStrategy\SecurityStrategyBuilderInterface;
+use JsonApi\SecurityStrategy\SecurityStrategyBuilderPool;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -11,9 +11,9 @@ use Symfony\Component\DependencyInjection\Reference;
 /**
  * @package JsonApi\DependencyInjection\Compiler
  */
-class RoutingCompilerPass implements CompilerPassInterface
+class SecurityStrategyCompilerPass implements CompilerPassInterface
 {
-    private const TAG = 'json_api.controller';
+    private const TAG = 'json_api.security_strategy';
 
     /**
      * @param ContainerBuilder $container
@@ -21,7 +21,7 @@ class RoutingCompilerPass implements CompilerPassInterface
     public static function registerAutoconfiguration(ContainerBuilder $container): void
     {
         $container
-            ->registerForAutoconfiguration(ControllerInterface::class)
+            ->registerForAutoconfiguration(SecurityStrategyBuilderInterface::class)
             ->addTag(self::TAG);
     }
 
@@ -30,12 +30,11 @@ class RoutingCompilerPass implements CompilerPassInterface
      */
     public function process(ContainerBuilder $container)
     {
-        $loaderDefinition = $container->getDefinition(RouteLoader::class);
         $serviceIds = array_keys($container->findTaggedServiceIds(self::TAG));
-        $controllerDefinitions = [];
+        $strategies = [];
         foreach ($serviceIds as $serviceId) {
-            $controllerDefinitions[] = new Reference($serviceId);
+            $strategies[] = new Reference($serviceId);
         }
-        $loaderDefinition->replaceArgument(2, $controllerDefinitions);
+        $container->getDefinition(SecurityStrategyBuilderPool::class)->replaceArgument(0, $strategies);
     }
 }

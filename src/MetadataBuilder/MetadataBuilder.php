@@ -28,6 +28,11 @@ class MetadataBuilder
     public $relationships = [];
 
     /**
+     * @var FieldBuilder[]|null
+     */
+    public $constructorArguments = null;
+
+    /**
      * @var array
      */
     public $metas = [];
@@ -58,6 +63,31 @@ class MetadataBuilder
     public $reflectionClass;
 
     /**
+     * @var string
+     */
+    public $securityStrategy = null;
+
+    /**
+     * @var array
+     */
+    public $securityOptions = [];
+
+    /**
+     * @var string
+     */
+    public $securityNormalizeStrategy = null;
+
+    /**
+     * @var array
+     */
+    public $securityNormalizeOptions = [];
+
+    /**
+     * @var MetadataBuilder|null
+     */
+    public $parent = null;
+
+    /**
      * @var Metadata
      */
     private $metadata;
@@ -84,14 +114,35 @@ class MetadataBuilder
     }
 
     /**
-     * @param array $map
+     * @param MetadataBuilder[] $map
      * @return Metadata
      * @throws BuilderException
      */
     public function getMetadata(array $map)
     {
         if ($this->metadata === null) {
-            $this->metadata = new Metadata($this->class, $this->type);
+            $securityStrategy = $this->securityStrategy;
+            $securityOptions = $this->securityOptions;
+            $securityNormalizeStrategy = $this->securityNormalizeStrategy;
+            $securityNormalizeOptions = $this->securityNormalizeOptions;
+            if ($this->parent) {
+                if ($securityStrategy === null) {
+                    $securityStrategy = $this->parent->securityStrategy;
+                    $securityOptions = $this->parent->securityOptions;
+                }
+                if ($securityNormalizeStrategy === null) {
+                    $securityNormalizeStrategy = $this->parent->securityNormalizeStrategy;
+                    $securityNormalizeOptions = $this->parent->securityNormalizeOptions;
+                }
+            }
+            $this->metadata = new Metadata(
+                $this->class,
+                $this->type,
+                $securityStrategy ?? 'none',
+                $securityOptions,
+                $securityNormalizeStrategy ?? 'none',
+                $securityNormalizeOptions
+            );
             foreach ($this->discrimination as $discrimination) {
                 if (isset($map[$discrimination])) {
                     $this->metadata->addDiscriminator($map[$discrimination]->getMetadata($map));
@@ -102,11 +153,17 @@ class MetadataBuilder
             $identifiers   = [];
             $attributes    = [];
             $relationships = [];
+            $constructorArguments = [];
             foreach ($this->getInherits() as $inherit) {
+                if ($inherit->constructorArguments !== null) {
+                    $constructorArguments = $inherit->constructorArguments;
+                }
                 $identifiers = array_merge($identifiers, $inherit->identifiers);
                 $attributes = array_merge($attributes, $inherit->attributes);
                 $relationships = array_merge($relationships, $inherit->relationships);
             }
+            $constructorArguments = $this->getFields($constructorArguments, $map);
+            $this->metadata->setConstructorArguments($constructorArguments);
             $identifiers = $this->getFields($identifiers, $map);
             $this->metadata->setIdentifiers($identifiers);
             $attributes = $this->getFields($attributes, $map);
@@ -134,6 +191,9 @@ class MetadataBuilder
         return $fields;
     }
 
+    /**
+     * @return MetadataBuilder[]
+     */
     private function getInherits()
     {
         return array_merge($this->inherits, [$this]);

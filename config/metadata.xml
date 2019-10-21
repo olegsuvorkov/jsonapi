@@ -44,6 +44,7 @@
         <service id="JsonApi\MetadataBuilder\MetadataBuilderFactory">
             <argument type="service" id="json_api.metadata_builder.attribute"/>
             <argument type="service" id="json_api.metadata_builder.relationship"/>
+            <argument type="service" id="JsonApi\SecurityStrategy\SecurityStrategyBuilderPool"/>
         </service>
         <service id="JsonApi\Loader\ParserLoader">
             <argument type="collection"/>
@@ -54,10 +55,31 @@
             <argument type="service" id="Symfony\Component\Cache\Adapter\AdapterInterface"/>
             <argument type="service" id="JsonApi\Loader\ParserLoader"/>
         </service>
-        <service id="JsonApi\Metadata\LoaderRegister">
+        <service id="JsonApi\Metadata\RegisterFactory">
             <argument type="service" id="JsonApi\Loader\ParserLoader"/>
+            <argument type="service" id="JsonApi\SecurityStrategy\SecurityStrategyBuilderPool"/>
+            <argument type="collection"/>
+        </service>
+        <service id="JsonApi\Metadata\RegisterFactoryInterface" alias="JsonApi\Metadata\RegisterFactory"/>
+        <service id="JsonApi\Metadata\LoaderRegister">
+            <argument type="service" id="JsonApi\Metadata\RegisterFactoryInterface"/>
             <argument type="collection"/>
         </service>
         <service id="JsonApi\Metadata\RegisterInterface" alias="JsonApi\Metadata\LoaderRegister" public="true"/>
+
+        <service id="JsonApi\SecurityStrategy\SecurityStrategyBuilderPool">
+            <argument type="collection"/>
+        </service>
+        <service id="JsonApi\SecurityStrategy\NoneSecurityStrategyBuilder">
+            <tag name="json_api.security_strategy"/>
+        </service>
+        <service id="JsonApi\SecurityStrategy\RoleSecurityStrategyBuilder">
+            <argument type="service" id="security.authorization_checker"/>
+            <tag name="json_api.security_strategy"/>
+        </service>
+        <service id="JsonApi\SecurityStrategy\SubjectRoleSecurityStrategyBuilder">
+            <argument type="service" id="security.authorization_checker"/>
+            <tag name="json_api.security_strategy"/>
+        </service>
     </services>
 </container>

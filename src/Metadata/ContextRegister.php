@@ -18,8 +18,6 @@ class ContextRegister extends Register
      */
     private $original;
 
-    private $classMap = [];
-
     /**
      * @param string[][] $fields
      * @param RegisterInterface $original

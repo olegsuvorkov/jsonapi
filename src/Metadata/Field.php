@@ -127,6 +127,37 @@ class Field implements FieldInterface
     }
 
     /**
+     * @inheritDoc
+     */
+    public function denormalize(array $data)
+    {
+        if (array_key_exists($this->serializeName, $data)) {
+            return $this->transformer->reverseTransform($data[$this->serializeName], $this->options);
+        } else {
+            throw new InvalidArgumentException();
+        }
+    }
+
+    public function setDenormalizeValue($object, array $data): void
+    {
+        if ($this->setter !== null && array_key_exists($this->serializeName, $data)) {
+            $value = $this->transformer->reverseTransform($data[$this->serializeName], array_merge($this->options, [
+                'data' => $this->getValue($object),
+            ]));
+            $object->{$this->setter}($value);
+        }
+    }
+
+    /**
+     * @param array $data
+     * @param array $ids
+     */
+    public function parseScalarValue(array &$data, array &$ids)
+    {
+        $data[$this->name] = $this->transformer->reverseTransformScalar($ids, $this->options);
+    }
+
+    /**
      * @param $object
      * @return mixed|string
      * @throws InvalidArgumentException

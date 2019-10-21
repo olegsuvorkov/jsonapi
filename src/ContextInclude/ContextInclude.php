@@ -16,11 +16,6 @@ class ContextInclude implements ContextIncludeInterface
     private $list = [];
 
     /**
-     * @var IncludeStack
-     */
-    protected $stack;
-
-    /**
      * @var FieldInterface
      */
     public $field;
@@ -33,7 +28,7 @@ class ContextInclude implements ContextIncludeInterface
         $this->field = $field;
     }
 
-    public function register(MetadataInterface $metadata, $object, IncludeStackInterface $stack)
+    public function register(MetadataInterface $metadata, $object, array &$stack)
     {
         $metadata = $metadata->getOriginalMetadata($object);
         foreach ($this->list as $field) {
@@ -58,10 +53,12 @@ class ContextInclude implements ContextIncludeInterface
         return $this->list[] = $child;
     }
 
-    protected function addToStack($data, IncludeStackInterface $stack)
+    protected function addToStack($data, array &$stack)
     {
         $data = $this->field->getValue($data);
-        $stack->add($data);
+        if (!in_array($data, $stack, true)) {
+            $stack[] = $data;
+        }
         $this->register($this->field->getOption('target'), $data, $stack);
     }
 }
