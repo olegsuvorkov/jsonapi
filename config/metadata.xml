@@ -25,6 +25,10 @@
             <argument type="service" id="JsonApi\Transformer\StringTransformer"/>
             <tag name="json_api.transformer_configurator" type="string"/>
         </service>
+        <service id="json_api.transformer_configurator.date" class="JsonApi\MetadataBuilder\Configurator\Configurator">
+            <argument type="service" id="JsonApi\Transformer\DateTransformer"/>
+            <tag name="json_api.transformer_configurator" type="date"/>
+        </service>
         <service id="JsonApi\MetadataBuilder\Configurator\AttributeConfigurator">
             <argument type="collection"/>
         </service>

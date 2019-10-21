@@ -35,6 +35,9 @@
         <service id="JsonApi\Transformer\StringTransformer">
             <tag name="json_api.transformer"/>
         </service>
+        <service id="JsonApi\Transformer\DateTransformer">
+            <tag name="json_api.transformer"/>
+        </service>
         <!-- END TRANSFORMER -->
 
         <service id="JsonApi\Serializer\Encoder\JsonVndApiEncoder">

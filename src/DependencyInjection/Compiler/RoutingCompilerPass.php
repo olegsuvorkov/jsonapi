@@ -34,8 +34,8 @@ class RoutingCompilerPass implements CompilerPassInterface
         $serviceIds = array_keys($container->findTaggedServiceIds(self::TAG));
         $controllerDefinitions = [];
         foreach ($serviceIds as $serviceId) {
-            $controllerDefinitions[] = new Reference($serviceId);
+            $controllerDefinitions[$serviceId] = new Reference($serviceId);
         }
-        $loaderDefinition->replaceArgument(2, $controllerDefinitions);
+        $loaderDefinition->replaceArgument(4, $controllerDefinitions);
     }
 }

@@ -143,6 +143,11 @@ interface MetadataInterface
     public function setParent(?MetadataInterface $parent): void;
 
     /**
+     * @return MetadataInterface
+     */
+    public function getOriginal(): MetadataInterface;
+
+    /**
      * @param string[] $fields
      * @return MetadataInterface
      */

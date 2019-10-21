@@ -88,6 +88,11 @@ class Metadata implements MetadataInterface
     private $reflection;
 
     /**
+     * @var MetadataInterface|null
+     */
+    private $original = null;
+
+    /**
      * @param string $class
      * @param string $type
      * @param string $securityStrategy
@@ -428,11 +433,20 @@ class Metadata implements MetadataInterface
     }
 
     /**
+     * @return MetadataInterface
+     */
+    public function getOriginal(): MetadataInterface
+    {
+        return $this->original ?? $this;
+    }
+
+    /**
      * @inheritDoc
      */
     public function createContextMetadata(?array $fields): MetadataInterface
     {
         $metadata = clone $this;
+        $metadata->original = $this;
         $metadata->attributes = [];
         foreach ($this->attributes as $field) {
             if ($field->inContext($fields)) {

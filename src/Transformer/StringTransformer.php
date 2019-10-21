@@ -20,7 +20,7 @@ class StringTransformer extends Transformer
      */
     public function reverseTransformScalar(array &$ids, array $options)
     {
-        $value = next($ids);
+        $value = current($ids);
         if ($value === false) {
             throw new InvalidArgumentException();
         }

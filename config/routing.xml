@@ -8,6 +8,8 @@
         <service id="JsonApi\Router\RouteLoader" public="true">
             <argument type="string"/>
             <argument type="string"/>
+            <argument type="string"/>
+            <argument type="string"/>
             <argument type="collection"/>
         </service>
     </services>

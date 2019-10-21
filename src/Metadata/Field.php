@@ -126,6 +126,11 @@ class Field implements FieldInterface
         return $value;
     }
 
+    public function reverseTransform(array $data)
+    {
+        return $this->transformer->reverseTransform($data, $this->options);
+    }
+
     /**
      * @inheritDoc
      */

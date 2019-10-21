@@ -32,6 +32,8 @@ interface FieldInterface
      */
     public function getNormalizeValue($object);
 
+    public function reverseTransform(array $data);
+
     /**
      * @param array $data
      * @return object|object[]|null

@@ -4,7 +4,6 @@ namespace JsonApi\Serializer\Encoder;
 
 use JsonApi\Context\ContextInterface;
 use JsonApi\Exception\ParseUrlException;
-use JsonApi\Metadata\UndefinedMetadataException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Serializer\Encoder\DecoderInterface;
 use Symfony\Component\Serializer\Encoder\EncoderInterface;

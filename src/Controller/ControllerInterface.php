@@ -3,6 +3,7 @@
 namespace JsonApi\Controller;
 
 use JsonApi\Context\ContextInterface;
+use JsonApi\Metadata\RegisterInterface;
 use JsonApi\SecurityStrategy\SecurityStrategyInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -49,6 +50,22 @@ interface ControllerInterface
      * @return Response
      */
     public function relationships(
+        string $id,
+        string $relationship,
+        ContextInterface $context,
+        SecurityStrategyInterface $securityStrategy
+    ): Response;
+
+    /**
+     * @param Request $request
+     * @param string $id
+     * @param string $relationship
+     * @param ContextInterface $context
+     * @param SecurityStrategyInterface $securityStrategy
+     * @return Response
+     */
+    public function relationshipsDelete(
+        Request $request,
         string $id,
         string $relationship,
         ContextInterface $context,
