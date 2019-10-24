@@ -62,9 +62,11 @@ class ContextIncludeBuilder
         if ($part = array_shift($parts)) {
             $notExist = true;
             foreach ($metadata->findRelationships($part) as $field) {
-                /** @var MetadataInterface $fieldMeta */
-                $fieldMeta = $field->getOption('target');
-                $this->addContextInclude($fieldMeta, $this->createContextInclude($context, $field), $parts);
+                $this->addContextInclude(
+                    $field->getTargetMetadata(),
+                    $this->createContextInclude($context, $field),
+                    $parts
+                );
                 $notExist = false;
             }
             if ($notExist) {

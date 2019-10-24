@@ -63,10 +63,28 @@ class Context implements ContextInterface
     }
 
     /**
+     * @inheritDoc
+     */
+    public function hasType(string $type): bool
+    {
+        return $this->register->hasType($type);
+    }
+
+    /**
      * @return ContextIncludeInterface
      */
     public function getInclude(): ContextIncludeInterface
     {
         return $this->include;
+    }
+
+    /**
+     * @param ContextIncludeInterface $include
+     * @return Context
+     */
+    public function setInclude(ContextIncludeInterface $include): Context
+    {
+        $this->include = $include;
+        return $this;
     }
 }

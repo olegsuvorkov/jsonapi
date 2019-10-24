@@ -45,4 +45,12 @@ class Register implements RegisterInterface
         }
         throw UndefinedMetadataException::notFindByType($type);
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function hasType(string $type): bool
+    {
+        return isset($this->map[$type]);
+    }
 }

@@ -2,19 +2,21 @@
 
 namespace JsonApi\Metadata;
 
-use JsonApi\SecurityStrategy\SecurityStrategyBuilderPool;
+use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\Common\Persistence\ObjectRepository;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use JsonApi\SecurityStrategy\SecurityStrategyInterface;
 use JsonApi\Transformer\InvalidArgumentException;
 
 /**
  * @package JsonApi\ClassMetadata
  */
-interface MetadataInterface
+interface MetadataInterface extends SecurityStrategyInterface
 {
     /**
-     * @param SecurityStrategyBuilderPool $securityPool
+     * @param MetadataContainerInterface $metadataContainer
      */
-    public function initializeSecurity(SecurityStrategyBuilderPool $securityPool): void;
+    public function initialize(MetadataContainerInterface $metadataContainer): void;
 
     /**
      * @return string
@@ -31,7 +33,10 @@ interface MetadataInterface
      */
     public function getConstructorArguments(): array;
 
-    public function isConstructorArgument(FieldInterface $field): bool;
+    /**
+     * @return ClassMetadata
+     */
+    public function getClassMetadata(): ClassMetadata;
 
     /**
      * @return MetadataInterface[]
@@ -54,10 +59,11 @@ interface MetadataInterface
      * @return object
      */
     public function newInstanceWithoutConstructor();
+
     /**
      * @param $object
      * @param array $arguments
-     * @return object
+     * @return void
      */
     public function invokeConstructor($object, array $arguments = []);
 
@@ -74,7 +80,17 @@ interface MetadataInterface
     /**
      * @return FieldInterface[]
      */
+    public function getDenormalizedAttributes();
+
+    /**
+     * @return FieldInterface[]
+     */
     public function getRelationships(): array;
+
+    /**
+     * @return FieldInterface[]
+     */
+    public function getDenormalizedRelationships();
 
     /**
      * @param string $serializeName
@@ -82,7 +98,18 @@ interface MetadataInterface
      */
     public function findRelationships(string $serializeName);
 
-    public function getRelationship(string $serializeName): ?FieldInterface;
+    /**
+     * @param string $serializeName
+     * @return FieldInterface
+     */
+    public function getRelationship(string $serializeName): FieldInterface;
+
+    /**
+     * @param $object
+     * @param string $serializeName
+     * @return FieldInterface
+     */
+    public function getRelationshipByEntity($object, string $serializeName): FieldInterface;
 
     /**
      * @param FieldInterface $field
@@ -158,4 +185,31 @@ interface MetadataInterface
      * @return bool
      */
     public function isInstance($object): bool;
+
+    /**
+     * @param string $id
+     * @return mixed
+     */
+    public function find(string $id);
+
+    /**
+     * @return ObjectManager
+     */
+    public function getEntityManager(): ObjectManager;
+
+    /**
+     * @return ObjectRepository
+     */
+    public function getRepository(): ObjectRepository;
+
+    /**
+     * @return string
+     */
+    public function generateListUrl(): string;
+
+    /**
+     * @param $entity
+     * @return string
+     */
+    public function generateEntityUrl($entity): string;
 }

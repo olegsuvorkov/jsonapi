@@ -2,13 +2,21 @@
 
 namespace JsonApi\Metadata;
 
+use JsonApi\SecurityStrategy\SecurityStrategyInterface;
 use JsonApi\Transformer\InvalidArgumentException;
 
 /**
  * @package JsonApi\Metadata\Field
  */
-interface FieldInterface
+interface FieldInterface extends SecurityStrategyInterface
 {
+    /**
+     * @param MetadataInterface $metadata
+     * @param MetadataContainerInterface $container
+     * @return void
+     */
+    public function initialize(MetadataInterface $metadata, MetadataContainerInterface $container): void;
+
     /**
      * @return string
      */
@@ -36,11 +44,12 @@ interface FieldInterface
 
     /**
      * @param array $data
+     * @param array $options
      * @return object|object[]|null
      */
-    public function denormalize(array $data);
+    public function denormalize(array $data, array $options);
 
-    public function setDenormalizeValue($object, array $data): void;
+    public function setDenormalizeValue($object, array $data, array $options): void;
 
 
     public function parseScalarValue(array &$data, array &$ids);
@@ -64,4 +73,50 @@ interface FieldInterface
      * @return bool
      */
     public function inContext(?array &$fields): bool;
+
+    /**
+     * @return bool
+     */
+    public function isRelationship(): bool;
+
+    /**
+     * @return MetadataInterface
+     */
+    public function getTargetMetadata(): MetadataInterface;
+
+    /**
+     * @return bool
+     */
+    public function isManyToMany(): bool;
+
+    /**
+     * @return bool
+     */
+    public function isOneToMany(): bool;
+
+    /**
+     * @return bool
+     */
+    public function isManyToOne(): bool;
+
+    /**
+     * @return bool
+     */
+    public function isOneToOne(): bool;
+
+    /**
+     * @return bool
+     */
+    public function isToMany(): bool;
+
+    /**
+     * @return bool
+     */
+    public function isToOne(): bool;
+
+    /**
+     * @param object $entity
+     * @return string
+     */
+    public function generateRelationshipUrl($entity): string;
 }

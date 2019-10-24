@@ -58,18 +58,14 @@ class JsonApiExtension extends Extension
         }
         $container->setParameter('json_api_name_prefix', $config['name_prefix']);
         $pathPrefixes = parse_url($config['path_prefix']);
-        $schemas = (array) ($pathPrefixes['scheme'] ?? null);
-        $host = $pathPrefixes['host'] ?? null;
-        $path = $pathPrefixes['path'] ?? null;
-        if (!$path) {
-            $path = '/';
-        }
+        $path = $pathPrefixes['path'] ?? '/';
+        $path = $path ?: '/';
         $container
             ->getDefinition(RouteLoader::class)
-            ->replaceArgument(0, $schemas)
-            ->replaceArgument(1, $host)
-            ->replaceArgument(2, $path)
-            ->replaceArgument(3, $config['name_prefix']);
+            ->replaceArgument(1, $pathPrefixes['scheme'] ?? null)
+            ->replaceArgument(2, $pathPrefixes['host'] ?? null)
+            ->replaceArgument(3, $path)
+            ->replaceArgument(4, $config['name_prefix']);
 
         $container->getDefinition(JsonApiListener::class)->replaceArgument(2, $path);
     }

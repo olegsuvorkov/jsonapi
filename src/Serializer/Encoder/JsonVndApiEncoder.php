@@ -3,8 +3,9 @@
 namespace JsonApi\Serializer\Encoder;
 
 use JsonApi\Context\ContextInterface;
+use JsonApi\ContextInclude\ContextInclude;
 use JsonApi\Exception\ParseUrlException;
-use Symfony\Component\HttpFoundation\Request;
+use JsonApi\Metadata\UndefinedMetadataException;
 use Symfony\Component\Serializer\Encoder\DecoderInterface;
 use Symfony\Component\Serializer\Encoder\EncoderInterface;
 use Symfony\Component\Serializer\Encoder\JsonDecode;
@@ -37,9 +38,6 @@ class JsonVndApiEncoder implements EncoderInterface,
      */
     private $decode;
 
-    /**
-     * JsonVndApiEncoder constructor.
-     */
     public function __construct()
     {
         $options = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT;
@@ -54,35 +52,53 @@ class JsonVndApiEncoder implements EncoderInterface,
 
     /**
      * @inheritDoc
-     * @throws ParseUrlException
+     * @throws UndefinedMetadataException
      */
-    public function encode($data, $format, array $context = [])
+    public function encode($list, $format, array $context = [])
     {
-        $fetchContext = $context['context'] ?? null;
-        if (!$fetchContext) {
-            throw new ParseUrlException();
-        }
-        $data = $this->getData($data);
-        $list = is_array($data) ? $data : [$data];
-        $stack = [];
-        if (is_array($data)) {
-            $result = [];
-            foreach ($data as $item) {
-                $result[] = $this->normalize($item, $fetchContext, $context, $stack);
+        if (isset($context['context'])) {
+            /** @var ContextInterface $registerContext */
+            $registerContext = $context['context'];
+            if (is_iterable($list) && !is_array($list)) {
+                $list = iterator_to_array($list);
+            }
+            $relationship = $context['relationship'] ?? null;
+            unset($context['relationship']);
+            $isMultiple = is_array($list);
+            $list = $isMultiple ? $list : [$list];
+            $include = $registerContext->getInclude();
+            if ($relationship) {
+                $include = $include->findBy($relationship) ?? new ContextInclude();
+                $stack = $list;
+            } else {
+                $stack = [];
+            }
+            $data = ['data' => []];
+            foreach ($list as $item) {
+                $context['metadata'] = $registerContext->getByClass($item);
+                $include->register($context['metadata'], $item, $stack);
+                $data['data'][] = $this->serializer->normalize($item, self::FORMAT, $context);
+            }
+            if ($relationship) {
+                $list = [];
+            }
+            if ($stack) {
+                unset($context['only_identity']);
+                $data['included'] = [];
+                foreach ($stack as $item) {
+                    if (!in_array($item, $list, true)) {
+                        $context['metadata'] = $registerContext->getByClass($item);
+                        $data['included'][] = $this->serializer->normalize($item, self::FORMAT, $context);
+                    }
+                }
+            }
+            if (!$isMultiple) {
+                $data['data'] = array_shift($data['data']);
             }
         } else {
-            $result = $this->normalize($data, $fetchContext, $context, $stack);
+            $data = $list;
         }
-        $included = [];
-        foreach ($stack as $item) {
-            if (!in_array($item, $list, true)) {
-                $included[] = $this->normalize($item, $fetchContext, $context);
-            }
-        }
-        return $this->encoder->encode([
-            'data'     => $result,
-            'included' => $included,
-        ], $format, $context);
+        return $this->encoder->encode($data, $format, $context);
     }
 
     /**
@@ -107,41 +123,5 @@ class JsonVndApiEncoder implements EncoderInterface,
     public function supportsDecoding($format)
     {
         return $format === self::FORMAT;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public static function checkContentType(?Request $request): bool
-    {
-        return $request && self::FORMAT === $request->headers->get('Content-Type');
-    }
-
-    private function normalize($data, ContextInterface $fetchContext, array $context, array &$stack = null)
-    {
-        $metadata = $fetchContext->getByClass($data);
-        $context['metadata'] = $metadata;
-        if ($stack !== null) {
-            $fetchContext->getInclude()->register($metadata, $data, $stack);
-        }
-        return $this->serializer->normalize($data, self::FORMAT, $context);
-    }
-
-    private function getData($data)
-    {
-        if (is_iterable($data)) {
-            if (!is_array($data)) {
-                $data = iterator_to_array($data);
-            }
-        }
-        return $data;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public static function checkAcceptable(?Request $request): bool
-    {
-        return $request && in_array(self::FORMAT, $request->getAcceptableContentTypes());
     }
 }

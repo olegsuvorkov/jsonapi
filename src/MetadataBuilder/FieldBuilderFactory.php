@@ -15,7 +15,7 @@ class FieldBuilderFactory implements FieldBuilderFactoryInterface
     private $configurator;
 
     /**
-     * @param \JsonApi\MetadataBuilder\Configurator\ConfiguratorInterface $configurator
+     * @param ConfiguratorInterface $configurator
      */
     public function __construct(ConfiguratorInterface $configurator)
     {

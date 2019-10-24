@@ -5,9 +5,7 @@
                         http://symfony.com/schema/dic/services/services-1.0.xsd">
     <services>
         <defaults public="false"/>
-        <service id="JsonApi\DataStorage\DataStorage">
-            <argument type="service" id="doctrine"/>
-        </service>
+        <service id="JsonApi\DataStorage\DataStorage"/>
         <service id="JsonApi\DataStorage\DataStorageInterface" alias="JsonApi\DataStorage\DataStorage"/>
         <!-- BEGIN TRANSFORMER -->
         <service id="JsonApi\Transformer\BoolTransformer">
@@ -38,12 +36,24 @@
         <service id="JsonApi\Transformer\DateTransformer">
             <tag name="json_api.transformer"/>
         </service>
+        <service id="JsonApi\Transformer\TransformerPool">
+            <argument type="collection"/>
+        </service>
+        <service id="JsonApi\Transformer\TransformerPoolInterface" alias="JsonApi\Transformer\TransformerPool"/>
         <!-- END TRANSFORMER -->
 
+        <service id="JsonApi\Metadata\MetadataContainer">
+            <argument type="service" id="JsonApi\SecurityStrategy\SecurityStrategyBuilderPool"/>
+            <argument type="service" id="doctrine"/>
+            <argument type="service" id="JsonApi\Transformer\TransformerPoolInterface"/>
+            <argument type="service" id="JsonApi\Router\ApiUrlGeneratorInterface"/>
+        </service>
+        <service id="JsonApi\Metadata\MetadataContainerInterface" alias="JsonApi\Metadata\MetadataContainer"/>
         <service id="JsonApi\Serializer\Encoder\JsonVndApiEncoder">
             <tag name="serializer.encoder" priority="1000"/>
         </service>
         <service id="JsonApi\Serializer\Normalizer\DataNormalizer">
+            <argument type="service" id="JsonApi\DataStorage\DataStorageInterface"/>
             <tag name="serializer.normalizer" priority="1001"/>
         </service>
         <service id="JsonApi\Serializer\Normalizer\MetadataNormalizer">

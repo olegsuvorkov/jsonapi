@@ -76,6 +76,8 @@ class MultipleRelationshipTransformer implements TransformerInterface
      */
     public function reverseTransform($data, array $options)
     {
+        /** @var DataStorageInterface $storage */
+        $storage = $options['storage'] ?? $this->storage;
         if (!is_array($data)) {
             throw new InvalidArgumentException();
         }
@@ -92,7 +94,7 @@ class MultipleRelationshipTransformer implements TransformerInterface
                 [$id, $type] = Metadata::reverseRelatedTransform($item);
                 /** @var MetadataInterface $metadata */
                 $metadata = $options['target']->getMetadataByType($type);
-                $result->add($this->storage->get($metadata, $id));
+                $result->add($storage->get($metadata, $id));
             }
         }
         return $result;

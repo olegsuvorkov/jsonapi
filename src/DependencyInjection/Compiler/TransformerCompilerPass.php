@@ -2,11 +2,10 @@
 
 namespace JsonApi\DependencyInjection\Compiler;
 
-use JsonApi\Controller\ControllerInterface;
-use JsonApi\Metadata\LoaderRegister;
-use JsonApi\Metadata\RegisterFactory;
+use InvalidArgumentException;
 use JsonApi\MetadataBuilder\Configurator\AttributeConfigurator;
 use JsonApi\Transformer\TransformerInterface;
+use JsonApi\Transformer\TransformerPool;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -39,7 +38,7 @@ class TransformerCompilerPass implements CompilerPassInterface
         foreach ($serviceIds as $serviceId) {
             $transformers[] = new Reference($serviceId);
         }
-        $container->getDefinition(RegisterFactory::class)->replaceArgument(2, $transformers);
+        $container->getDefinition(TransformerPool::class)->replaceArgument(0, $transformers);
         $attributes = [];
         foreach ($this->findTaggedServiceMap($container, 'json_api.transformer_configurator') as $type => $serviceId) {
             $attributes[$type] = new Reference($serviceId);
@@ -55,7 +54,7 @@ class TransformerCompilerPass implements CompilerPassInterface
                 if (isset($tag['type'])) {
                     $list[$tag['type']] = $serviceId;
                 } else {
-                    throw new \InvalidArgumentException(sprintf(
+                    throw new InvalidArgumentException(sprintf(
                         'The name is not defined in the "%s" tag for the service "%s"',
                         $name,
                         $serviceId

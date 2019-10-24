@@ -3,7 +3,6 @@
 namespace JsonApi\Context;
 
 use JsonApi\Exception\InvalidTypeException;
-use JsonApi\Exception\ParseUrlException;
 use JsonApi\Metadata\RegisterInterface;
 use JsonApi\Metadata\UndefinedMetadataException;
 

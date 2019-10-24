@@ -3,8 +3,6 @@
 namespace JsonApi\Controller;
 
 use JsonApi\Context\ContextInterface;
-use JsonApi\Metadata\RegisterInterface;
-use JsonApi\SecurityStrategy\SecurityStrategyInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -21,66 +19,43 @@ interface ControllerInterface
     /**
      * @param Request $request
      * @param ContextInterface $context
-     * @param SecurityStrategyInterface $securityStrategy
      * @return Response
      */
-    public function list(
-        Request $request,
-        ContextInterface $context,
-        SecurityStrategyInterface $securityStrategy
-    ): Response;
+    public function list(Request $request, ContextInterface $context): Response;
 
     /**
      * @param string $id
      * @param ContextInterface $context
-     * @param SecurityStrategyInterface $securityStrategy
      * @return Response
      */
-    public function fetch(
-        string $id,
-        ContextInterface $context,
-        SecurityStrategyInterface $securityStrategy
-    ): Response;
+    public function fetch(string $id, ContextInterface $context): Response;
 
     /**
      * @param string $id
      * @param string $relationship
      * @param ContextInterface $context
-     * @param SecurityStrategyInterface $securityStrategy
      * @return Response
      */
-    public function relationships(
-        string $id,
-        string $relationship,
-        ContextInterface $context,
-        SecurityStrategyInterface $securityStrategy
-    ): Response;
+    public function relationships(string $id, string $relationship, ContextInterface $context): Response;
 
     /**
      * @param Request $request
      * @param string $id
      * @param string $relationship
      * @param ContextInterface $context
-     * @param SecurityStrategyInterface $securityStrategy
      * @return Response
      */
     public function relationshipsDelete(
         Request $request,
         string $id,
         string $relationship,
-        ContextInterface $context,
-        SecurityStrategyInterface $securityStrategy
+        ContextInterface $context
     ): Response;
 
     /**
      * @param Request $request
      * @param ContextInterface $context
-     * @param SecurityStrategyInterface $securityStrategy
      * @return Response
      */
-    public function create(
-        Request $request,
-        ContextInterface $context,
-        SecurityStrategyInterface $securityStrategy
-    ): Response;
+    public function create(Request $request, ContextInterface $context): Response;
 }

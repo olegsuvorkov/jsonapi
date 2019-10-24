@@ -3,9 +3,6 @@
 namespace JsonApi\Loader;
 
 use JsonApi\Exception\LoaderException;
-use JsonApi\Metadata\MetadataInterface;
-use JsonApi\Metadata\RegisterInterface;
-use Psr\Cache\CacheItemInterface;
 use Psr\Cache\InvalidArgumentException;
 use Symfony\Component\Cache\Adapter\AdapterInterface;
 
