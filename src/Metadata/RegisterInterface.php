@@ -20,4 +20,10 @@ interface RegisterInterface
      * @throws UndefinedMetadataException
      */
     public function getByType(string $type): MetadataInterface;
+
+    /**
+     * @param string $type
+     * @return bool
+     */
+    public function hasType(string $type): bool;
 }

@@ -5,7 +5,6 @@ namespace JsonApi\Serializer\Normalizer;
 use JsonApi\DataStorage\DataStorageInterface;
 use JsonApi\Metadata\MetadataInterface;
 use JsonApi\Metadata\RegisterInterface;
-use JsonApi\Metadata\UndefinedMetadataException;
 use JsonApi\Serializer\Encoder\JsonVndApiEncoder;
 use JsonApi\Transformer\InvalidArgumentException;
 use Symfony\Component\Serializer\Normalizer\CacheableSupportsMethodInterface;
@@ -20,9 +19,20 @@ class MetadataNormalizer implements ContextAwareNormalizerInterface,
                                     CacheableSupportsMethodInterface
 {
     /**
+     * @var array
+     */
+    private static $defaults = [
+        'id'            => null,
+        'type'          => null,
+        'attributes'    => [],
+        'relationships' => [],
+    ];
+
+    /**
      * @var RegisterInterface
      */
     private $register;
+
     /**
      * @var DataStorageInterface
      */
@@ -45,23 +55,25 @@ class MetadataNormalizer implements ContextAwareNormalizerInterface,
     {
         /** @var MetadataInterface $metadata */
         $metadata = $context['metadata'];
-        $attributes = [];
-        foreach ($metadata->getAttributes() as $field) {
-            $attributes[$field->getSerializeName()] = $field->getNormalizeValue($object);
+        if (empty($context['only_identity']) && $metadata->getAttributes()) {
+            $attributes = [];
+            foreach ($metadata->getAttributes() as $field) {
+                $attributes[$field->getSerializeName()] = $field->getNormalizeValue($object);
+            }
+            $data['attributes'] = $attributes;
         }
-        $relationships = [];
-        foreach ($metadata->getRelationships() as $field) {
-            $relationships[$field->getSerializeName()] = [
-                'data' => $field->getNormalizeValue($object),
-            ];
+        $data['id'] = $metadata->getId($object);
+        if (empty($context['only_identity']) && $metadata->getRelationships()) {
+            $relationships = [];
+            foreach ($metadata->getRelationships() as $field) {
+                $relationships[$field->getSerializeName()] = [
+                    'data' => $field->getNormalizeValue($object),
+                ];
+            }
+            $data['relationships'] = $relationships;
         }
-
-        return [
-            'attributes'    => $attributes,
-            'id'            => $metadata->getId($object),
-            'relationships' => $relationships,
-            'type'          => $metadata->getType(),
-        ];
+        $data['type'] = $metadata->getType();
+        return $data;
     }
 
     /**
@@ -86,32 +98,47 @@ class MetadataNormalizer implements ContextAwareNormalizerInterface,
      */
     public function denormalize($data, $type, $format = null, array $context = [])
     {
-        if (!is_array($data)) {
+        $storage = $context['storage'] ?? $this->storage;
+        
+        if (is_array($data)) {
+            $data = array_merge(self::$defaults, $data);
+        } else {
             throw new InvalidArgumentException();
         }
-        [$id, $attributes, $relationships] = $this->getDenormalizedData($type, $data);
-        $metadata = $this->register->getByType($type);
-        $entity = $this->storage->get($metadata, $id);
-        if ($this->storage->isNew($entity)) {
+        $id = $data['id'];
+        if ($id !== null && !is_string($id)) {
+            throw new InvalidArgumentException();
+        }
+        $attributes = $data['attributes'];
+        if (!is_array($attributes)) {
+            throw new InvalidArgumentException();
+        }
+        $relationships = $data['relationships'];
+        if (!is_array($relationships)) {
+            throw new InvalidArgumentException();
+        }
+        if (is_string($data['type'])) {
+            $metadata = $this->register->getByType($type)->getMetadataByType($data['type']);
+        } else {
+            throw new InvalidArgumentException();
+        }
+        $entity = $storage->get($metadata, $id);
+        if ($storage->isNew($entity)) {
             $arguments = [];
             foreach ($metadata->getConstructorArguments() as $field) {
-                if ($metadata->containsRelationship($field)) {
-                    $arguments[] = $field->denormalize($relationships);
+                if ($field->isRelationship()) {
+                    $arguments[] = $field->denormalize($relationships, $context);
                 } else {
-                    $arguments[] = $field->denormalize($attributes);
+                    $arguments[] = $field->denormalize($attributes, $context);
                 }
             }
             $metadata->invokeConstructor($entity, $arguments);
         }
-        foreach ($metadata->getAttributes() as $field) {
-            if (!$metadata->isConstructorArgument($field)) {
-                $field->setDenormalizeValue($entity, $attributes);
-            }
+        foreach ($metadata->getDenormalizedAttributes() as $field) {
+            $field->setDenormalizeValue($entity, $attributes, $context);
         }
-        foreach ($metadata->getRelationships() as $field) {
-            if (!$metadata->isConstructorArgument($field)) {
-                $field->setDenormalizeValue($entity, $relationships);
-            }
+        foreach ($metadata->getDenormalizedRelationships() as $field) {
+            $field->setDenormalizeValue($entity, $relationships, $context);
         }
         return $entity;
     }
@@ -121,46 +148,6 @@ class MetadataNormalizer implements ContextAwareNormalizerInterface,
      */
     public function supportsDenormalization($data, $type, $format = null, array $context = [])
     {
-        try {
-            return $format === JsonVndApiEncoder::FORMAT && $this->register->getByType($type);
-        } catch (UndefinedMetadataException $e) {
-            return false;
-        }
-    }
-
-    private function getDenormalizedData(string $type, array $data): array
-    {
-
-        $id = null;
-        $attributes = [];
-        $relationships = [];
-        foreach ($data as $key => $value) {
-            if ($key === 'id') {
-                if (is_string($value)) {
-                    $id = $value;
-                } else {
-                    throw new InvalidArgumentException();
-                }
-            } elseif ($key === 'type') {
-                if ($value !== $type) {
-                    throw new InvalidArgumentException();
-                }
-            } elseif ($key === 'attributes') {
-                if (is_array($value)) {
-                    $attributes = $value;
-                } else {
-                    throw new InvalidArgumentException();
-                }
-            } elseif ($key === 'relationships') {
-                if (is_array($value)) {
-                    $relationships = $value;
-                } else {
-                    throw new InvalidArgumentException();
-                }
-            } else {
-                throw new InvalidArgumentException();
-            }
-        }
-        return [$id, $attributes, $relationships];
+        return $format === JsonVndApiEncoder::FORMAT && $this->register->hasType($type);
     }
 }

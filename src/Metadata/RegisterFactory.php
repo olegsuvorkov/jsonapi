@@ -3,8 +3,6 @@
 namespace JsonApi\Metadata;
 
 use JsonApi\Loader\LoaderInterface;
-use JsonApi\SecurityStrategy\SecurityStrategyBuilderPool;
-use JsonApi\Transformer\TransformerPool;
 
 /**
  * @package JsonApi\Metadata
@@ -17,25 +15,18 @@ class RegisterFactory implements RegisterFactoryInterface
     private $loader;
 
     /**
-     * @var SecurityStrategyBuilderPool
+     * @var MetadataContainerInterface
      */
-    private $securityPool;
+    private $metadataContainer;
 
     /**
      * @param LoaderInterface $loader
-     * @param SecurityStrategyBuilderPool $securityPool
-     * @param array $transformers
+     * @param MetadataContainerInterface $metadataContainer
      */
-    public function __construct(
-        LoaderInterface $loader,
-        SecurityStrategyBuilderPool $securityPool,
-        array $transformers
-    ) {
+    public function __construct(LoaderInterface $loader, MetadataContainerInterface $metadataContainer)
+    {
         $this->loader = $loader;
-        $this->securityPool = $securityPool;
-        foreach ($transformers as $transformer) {
-            TransformerPool::add($transformer);
-        }
+        $this->metadataContainer = $metadataContainer;
     }
 
     /**
@@ -45,7 +36,7 @@ class RegisterFactory implements RegisterFactoryInterface
     {
         $list = [];
         foreach ($this->loader->load() as $type => $item) {
-            $item->initializeSecurity($this->securityPool);
+            $item->initialize($this->metadataContainer);
             $list[$type] = $item;
         }
         return new Register($list);

@@ -2,7 +2,10 @@
 
 namespace JsonApi\Metadata;
 
-use JsonApi\SecurityStrategy\SecurityStrategyBuilderPool;
+use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\Common\Persistence\ObjectRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use JsonApi\SecurityStrategy\SecurityStrategyInterface;
 use JsonApi\Transformer\InvalidArgumentException;
 use ReflectionClass;
@@ -83,14 +86,19 @@ class Metadata implements MetadataInterface
     private $constructorArguments = [];
 
     /**
-     * @var ReflectionClass|null
-     */
-    private $reflection;
-
-    /**
      * @var MetadataInterface|null
      */
     private $original = null;
+
+    /**
+     * @var MetadataContainerInterface
+     */
+    private $container;
+
+    /**
+     * @var EntityManagerInterface
+     */
+    private $em;
 
     /**
      * @param string $class
@@ -117,18 +125,24 @@ class Metadata implements MetadataInterface
     }
 
     /**
-     * @param SecurityStrategyBuilderPool $securityPool
+     * @inheritDoc
      */
-    public function initializeSecurity(SecurityStrategyBuilderPool $securityPool): void
+    public function initialize(MetadataContainerInterface $metadataContainer): void
     {
-        $this->security = $securityPool->buildSecurityStrategy(
-            $this->securityStrategy,
-            $this->securityOptions
-        );
-        $this->securityNormalize = $securityPool->buildSecurityStrategy(
-            $this->securityNormalizeStrategy,
-            $this->securityNormalizeOptions
-        );
+        $this->container = $metadataContainer;
+        foreach ($this->identifiers as $field) {
+            $field->initialize($this, $metadataContainer);
+        }
+        foreach ($this->attributes as $field) {
+            if (!in_array($field, $this->identifiers, true)) {
+                $field->initialize($this, $metadataContainer);
+            }
+        }
+        foreach ($this->relationships as $field) {
+            if (!in_array($field, $this->identifiers, true)) {
+                $field->initialize($this, $metadataContainer);
+            }
+        }
     }
 
     public function getClass(): string
@@ -152,17 +166,14 @@ class Metadata implements MetadataInterface
         return $this->constructorArguments;
     }
 
-    public function isConstructorArgument(FieldInterface $field): bool
-    {
-        return in_array($field, $this->constructorArguments, true);
-    }
-
     private function getReflection(): ReflectionClass
     {
-        if ($this->reflection === null) {
-            $this->reflection = new ReflectionClass($this->class);
-        }
-        return $this->reflection;
+        return $this->getClassMetadata()->getReflectionClass();
+    }
+
+    public function getClassMetadata(): ClassMetadata
+    {
+        return $this->getEntityManager()->getClassMetadata($this->class);
     }
 
     /**
@@ -257,15 +268,13 @@ class Metadata implements MetadataInterface
     }
 
     /**
-     * @param $object
-     * @param array $arguments
-     * @return object
+     * @inheritDoc
      */
     public function invokeConstructor($object, array $arguments = [])
     {
         $method = $this->getReflection()->getConstructor();
         if ($method) {
-            return $method->invokeArgs($object, $arguments);
+            $method->invokeArgs($object, $arguments);
         }
     }
 
@@ -275,6 +284,18 @@ class Metadata implements MetadataInterface
     public function getAttributes(): array
     {
         return $this->attributes;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getDenormalizedAttributes()
+    {
+        foreach ($this->attributes as $field) {
+            if (!in_array($field, $this->constructorArguments, true)) {
+                yield $field;
+            }
+        }
     }
 
     /**
@@ -293,7 +314,17 @@ class Metadata implements MetadataInterface
         return $this->relationships;
     }
 
-
+    /**
+     * @inheritDoc
+     */
+    public function getDenormalizedRelationships()
+    {
+        foreach ($this->relationships as $field) {
+            if (!in_array($field, $this->constructorArguments, true)) {
+                yield $field;
+            }
+        }
+    }
 
     public function findRelationships(string $serializeName)
     {
@@ -311,12 +342,20 @@ class Metadata implements MetadataInterface
         }
     }
 
-    public function getRelationship(string $serializeName): ?FieldInterface
+    public function getRelationship(string $serializeName): FieldInterface
     {
         foreach ($this->findRelationships($serializeName) as $field) {
             return $field;
         }
-        return null;
+        throw new InvalidArgumentException();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getRelationshipByEntity($object, string $serializeName): FieldInterface
+    {
+        return $this->getOriginalMetadata($object)->getRelationship($serializeName);
     }
 
     /**
@@ -421,6 +460,12 @@ class Metadata implements MetadataInterface
      */
     public function getSecurity(): SecurityStrategyInterface
     {
+        if ($this->security === null) {
+            $this->security = $this->container->buildSecurityStrategy(
+                $this->securityStrategy,
+                $this->securityOptions
+            );
+        }
         return $this->security;
     }
 
@@ -429,6 +474,12 @@ class Metadata implements MetadataInterface
      */
     public function getSecurityNormalize(): SecurityStrategyInterface
     {
+        if ($this->securityNormalize === null) {
+            $this->securityNormalize = $this->container->buildSecurityStrategy(
+                $this->securityNormalizeStrategy,
+                $this->securityNormalizeOptions
+            );
+        }
         return $this->securityNormalize;
     }
 
@@ -462,7 +513,62 @@ class Metadata implements MetadataInterface
         return $metadata;
     }
 
+    /**
+     * @inheritDoc
+     */
+    public function isGranted(string $attribute, $subject = null): bool
+    {
+        return $this->getSecurity()->isGranted($attribute, $subject);
+    }
 
+    /**
+     * @inheritDoc
+     */
+    public function denyAccessUnlessGranted(string $attribute, $subject = null): void
+    {
+        $this->getSecurity()->denyAccessUnlessGranted($attribute, $subject);
+    }
+
+    /**
+     * @param string $id
+     * @return mixed
+     */
+    public function find(string $id)
+    {
+        return $this->getEntityManager()->find($this->class, $this->reverseId($id));
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getEntityManager(): ObjectManager
+    {
+        if ($this->em === null) {
+            $this->em = $this->container->getEntityManager($this->class);
+        }
+        return $this->em;
+    }
+
+    public function getRepository(): ObjectRepository
+    {
+        return $this->getEntityManager()->getRepository($this->class);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function generateListUrl(): string
+    {
+        return $this->container->generateUrl($this->type);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function generateEntityUrl($entity): string
+    {
+        return $this->container->generateEntityUrl($this->type, $this->getId($entity));
+    }
 
     /**
      * @inheritDoc
@@ -491,5 +597,32 @@ class Metadata implements MetadataInterface
     public function __wakeup()
     {
 
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function jsonSerialize()
+    {
+        $data = [
+            'type' => $this->type,
+            'identifiers' => [],
+            'attributes' => [],
+            'relationships' => [],
+            'discrimination' => [],
+        ];
+        foreach ($this->discriminatorMap as $discrimination) {
+            $data['discrimination'][] = $discrimination->getType();
+        }
+        foreach ($this->identifiers as $field) {
+            $data['identifiers'][$field->getSerializeName()] = $field;
+        }
+        foreach ($this->attributes as $field) {
+            $data['attributes'][$field->getSerializeName()] = $field;
+        }
+        foreach ($this->relationships as $field) {
+            $data['relationships'][$field->getSerializeName()] = $field;
+        }
+        return $data;
     }
 }

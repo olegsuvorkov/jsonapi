@@ -3,7 +3,6 @@
 namespace JsonApi\MetadataBuilder\Configurator;
 
 use JsonApi\Metadata\Field;
-use JsonApi\MetadataBuilder\FieldBuilder;
 use JsonApi\Transformer\TransformerInterface;
 
 /**

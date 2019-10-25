@@ -41,4 +41,6 @@ interface TransformerInterface
      * @return mixed
      */
     public function reverseTransform($data, array $options);
+
+    public function serializeOptions(array $options): array;
 }

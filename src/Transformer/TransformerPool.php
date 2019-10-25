@@ -5,33 +5,32 @@ namespace JsonApi\Transformer;
 /**
  * @package JsonApi\Transformer
  */
-final class TransformerPool
+final class TransformerPool implements TransformerPoolInterface
 {
     /**
      * @var TransformerInterface[]
      */
-    private static $_types = [];
+    private $transformers = [];
 
-    private function __construct()
+    /**
+     * @param TransformerInterface[] $transformers
+     */
+    public function __construct(array $transformers)
     {
+        foreach ($transformers as $transformer) {
+            $this->transformers[$transformer->getType()] = $transformer;
+        }
     }
 
     /**
-     * @param string $type
-     * @return TransformerInterface
-     * @throws UndefinedTransformerException
+     * @inheritDoc
      */
-    public static function get(string $type)
+    public function getTransformer(string $type): TransformerInterface
     {
-        $transformer = self::$_types[$type] ?? null;
+        $transformer = $this->transformers[$type] ?? null;
         if ($transformer) {
             return $transformer;
         }
         throw new UndefinedTransformerException(sprintf('Undefined type `%s`', $type));
-    }
-
-    public static function add(TransformerInterface $transformer)
-    {
-        self::$_types[$transformer->getType()] = $transformer;
     }
 }

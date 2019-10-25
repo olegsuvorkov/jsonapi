@@ -21,12 +21,4 @@ interface DataStorageInterface
      * @return bool
      */
     public function isNew($object): bool;
-
-    /**
-     * @param MetadataInterface $metadata
-     * @param string $id
-     * @param mixed $data
-     * @return void
-     */
-    public function set(MetadataInterface $metadata, string $id, $data): void;
 }

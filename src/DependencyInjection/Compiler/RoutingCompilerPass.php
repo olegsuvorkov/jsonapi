@@ -36,6 +36,6 @@ class RoutingCompilerPass implements CompilerPassInterface
         foreach ($serviceIds as $serviceId) {
             $controllerDefinitions[$serviceId] = new Reference($serviceId);
         }
-        $loaderDefinition->replaceArgument(4, $controllerDefinitions);
+        $loaderDefinition->replaceArgument(5, $controllerDefinitions);
     }
 }

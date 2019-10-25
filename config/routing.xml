@@ -6,11 +6,13 @@
     <services>
         <defaults public="false"/>
         <service id="JsonApi\Router\RouteLoader" public="true">
+            <argument type="service" id="Symfony\Component\HttpFoundation\RequestStack"/>
             <argument type="string"/>
             <argument type="string"/>
             <argument type="string"/>
             <argument type="string"/>
             <argument type="collection"/>
         </service>
+        <service id="JsonApi\Router\ApiUrlGeneratorInterface" alias="JsonApi\Router\RouteLoader"/>
     </services>
 </container>

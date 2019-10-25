@@ -2,12 +2,13 @@
 
 namespace JsonApi\MetadataBuilder;
 
+use Exception;
 use Throwable;
 
 /**
  * @package JsonApi\MetadataBuilder
  */
-class BuilderException extends \Exception
+class BuilderException extends Exception
 {
     public static function invalidField(string $name, Throwable $e)
     {

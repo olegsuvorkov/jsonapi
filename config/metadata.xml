@@ -61,8 +61,7 @@
         </service>
         <service id="JsonApi\Metadata\RegisterFactory">
             <argument type="service" id="JsonApi\Loader\ParserLoader"/>
-            <argument type="service" id="JsonApi\SecurityStrategy\SecurityStrategyBuilderPool"/>
-            <argument type="collection"/>
+            <argument type="service" id="JsonApi\Metadata\MetadataContainerInterface"/>
         </service>
         <service id="JsonApi\Metadata\RegisterFactoryInterface" alias="JsonApi\Metadata\RegisterFactory"/>
         <service id="JsonApi\Metadata\LoaderRegister">

@@ -72,7 +72,7 @@ class JsonApiListener implements EventSubscriberInterface
         if (0 !== strncmp($request->getPathInfo(), $this->prefix, strlen($this->prefix))) {
             return;
         }
-        if (!JsonVndApiEncoder::checkAcceptable($request)) {
+        if (!in_array(JsonVndApiEncoder::FORMAT, $request->getAcceptableContentTypes())) {
             $event->setResponse(new JsonResponse([
                 'errors' => [
                     'status' => Response::HTTP_BAD_REQUEST,
@@ -101,12 +101,12 @@ class JsonApiListener implements EventSubscriberInterface
         $contextIncludeBuilder = new ContextIncludeBuilder($contextRegister, $type);
         $contextInclude = $contextIncludeBuilder->build($request->query->get('include', ''));
         $request->attributes->set('context', new Context($metadata, $contextInclude, $contextRegister));
-        $request->attributes->set('securityStrategy', $metadata->getSecurity());
     }
 
     public function onKernelException(ExceptionEvent $event)
     {
-        if (!JsonVndApiEncoder::checkAcceptable($event->getRequest())) {
+        $request = $event->getRequest();
+        if (!in_array(JsonVndApiEncoder::FORMAT, $request->getAcceptableContentTypes())) {
             return;
         }
     }

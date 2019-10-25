@@ -3,14 +3,16 @@
 namespace JsonApi\Router;
 
 use JsonApi\Controller\ControllerInterface;
+use JsonApi\Transformer\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
 /**
  * @package JsonApi\Router
  */
-class RouteLoader
+class RouteLoader implements ApiUrlGeneratorInterface
 {
     const BASE_PATH          = '';
     const ENTITY_PATH        = '/{id}';
@@ -59,7 +61,7 @@ class RouteLoader
     ];
 
     /**
-     * @var string[]
+     * @var ControllerInterface[]
      */
     private $controllerList;
 
@@ -72,31 +74,57 @@ class RouteLoader
      * @var string
      */
     private $name;
+
     /**
      * @var array
      */
-    private $schemas;
+    private $schemes;
+
     /**
      * @var string|null
      */
     private $host;
 
     /**
-     * @param string[] $schemas
+     * @var RequestStack
+     */
+    private $requestStack;
+
+    /**
+     * @var string|null
+     */
+    private $prefixUrl = null;
+
+    /**
+     * @var string
+     */
+    private $scheme;
+
+    /**
+     * @param RequestStack $requestStack
+     * @param string $scheme
      * @param string $host
      * @param string $path
      * @param string $name
      * @param ControllerInterface[] $controllerList
      */
-    public function __construct(array $schemas, ?string $host, string $path, string $name, array $controllerList)
-    {
-        $this->schemas = $schemas;
+    public function __construct(
+        RequestStack $requestStack,
+        ?string $scheme,
+        ?string $host,
+        string $path,
+        string $name,
+        array $controllerList
+    ) {
+        $this->scheme = $scheme;
+        $this->schemes = (array) $scheme;
         $this->host = $host;
         $this->path = $path;
         $this->name = $name;
         foreach ($controllerList as $serviceId => $controller) {
-            $this->controllerList[$controller->getType()] = $serviceId;
+            $this->controllerList[$serviceId] = $controller;
         }
+        $this->requestStack = $requestStack;
     }
 
     /**
@@ -105,21 +133,71 @@ class RouteLoader
     public function loadRoutes(): RouteCollection
     {
         $collection = new RouteCollection();
-        foreach ($this->controllerList as $type => $controller) {
+        foreach ($this->controllerList as $serviceId => $controller) {
+            $type = $controller->getType();
             foreach (self::$routeParameters as $name => [$action, $path, $method, $requirements]) {
-                $collection->add(
-                    $this->name.$type.'_'.$name,
-                    new Route(
-                        $this->path.$type.$path,
-                        ['_controller' => $controller.'::'.$action, 'type' => $type],
-                        $requirements,
-                        $this->options,
-                        $this->host,
-                        $this->schemas,
-                        [$method]
-                    ));
+                if (method_exists($controller, $action)) {
+                    $collection->add(
+                        $this->name.$type.'_'.$name,
+                        new Route(
+                            $this->path.$type.$path,
+                            ['_controller' => $serviceId.'::'.$action, 'type' => $type],
+                            $requirements,
+                            $this->options,
+                            $this->host,
+                            $this->schemes,
+                            [$method]
+                        )
+                    );
+                }
             }
         }
         return $collection;
+    }
+
+    private function getHost(): string
+    {
+        if ($this->scheme && $this->host) {
+            return $this->scheme.'://'.$this->host;
+        } elseif ($request = $this->requestStack->getMasterRequest()) {
+            return $request->getScheme().'://'.$request->getHost();
+        } else {
+            throw new InvalidArgumentException();
+        }
+    }
+
+    /**
+     * @return string
+     */
+    private function getPrefixUrl(): string
+    {
+        if ($this->prefixUrl === null) {
+            $this->prefixUrl = $this->getHost().$this->path;
+        }
+        return $this->prefixUrl;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function generateUrl(string $type): string
+    {
+        return $this->getPrefixUrl().$type;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function generateEntityUrl(string $type, string $id): string
+    {
+        return $this->getPrefixUrl().$type.'/'.$id;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function generateRelationshipUrl(string $type, string $id, string $name): string
+    {
+        return $this->getPrefixUrl().$type.'/'.$id.'/relationships/'.$name;
     }
 }

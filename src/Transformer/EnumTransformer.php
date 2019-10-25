@@ -44,4 +44,14 @@ class EnumTransformer extends Transformer
         }
         throw new InvalidArgumentException('Expected `'.implode('`, `', $options['choices']).'`');
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function serializeOptions(array $options): array
+    {
+        return [
+            'choices' => $options['choices'],
+        ];
+    }
 }

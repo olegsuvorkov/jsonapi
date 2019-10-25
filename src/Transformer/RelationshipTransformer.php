@@ -73,6 +73,8 @@ class RelationshipTransformer implements TransformerInterface
      */
     public function reverseTransform($data, array $options)
     {
+        /** @var DataStorageInterface $storage */
+        $storage = $options['storage'] ?? $this->storage;
         if (!is_array($data)) {
             throw new InvalidArgumentException();
         }
@@ -86,9 +88,16 @@ class RelationshipTransformer implements TransformerInterface
             [$id, $type] = Metadata::reverseRelatedTransform($data);
             /** @var MetadataInterface $metadata */
             $metadata = $options['target']->getMetadataByType($type);
-            return $this->storage->get($metadata, $id);
+            return $storage->get($metadata, $id);
         } else {
             throw new InvalidArgumentException();
         }
+    }
+
+    public function serializeOptions(array $options): array
+    {
+        return [
+            'target' => $options['target']->getType(),
+        ];
     }
 }

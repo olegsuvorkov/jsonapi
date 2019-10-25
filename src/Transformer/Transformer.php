@@ -22,4 +22,12 @@ abstract class Transformer implements TransformerInterface
     {
         return $this->transform($data, $options);
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function serializeOptions(array $options): array
+    {
+        return [];
+    }
 }
