@@ -31,7 +31,7 @@ class JsonApiExtension extends Extension
         RoutingCompilerPass::registerAutoconfiguration($container);
         SecurityStrategyCompilerPass::registerAutoconfiguration($container);
         TransformerCompilerPass::registerAutoconfiguration($container);
-        $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../../config'));
+        $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('metadata.xml');
         $loader->load('serializer.xml');
         $loader->load('routing.xml');
@@ -60,6 +60,7 @@ class JsonApiExtension extends Extension
         $pathPrefixes = parse_url($config['path_prefix']);
         $path = $pathPrefixes['path'] ?? '/';
         $path = $path ?: '/';
+        $container->setParameter('json_api_path_prefix', $path);
         $container
             ->getDefinition(RouteLoader::class)
             ->replaceArgument(1, $pathPrefixes['scheme'] ?? null)

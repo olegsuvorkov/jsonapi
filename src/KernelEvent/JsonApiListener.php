@@ -72,6 +72,9 @@ class JsonApiListener implements EventSubscriberInterface
         if (0 !== strncmp($request->getPathInfo(), $this->prefix, strlen($this->prefix))) {
             return;
         }
+        if ($request->getPathInfo() === $this->prefix.'schema.js') {
+            return;
+        }
         if (!in_array(JsonVndApiEncoder::FORMAT, $request->getAcceptableContentTypes())) {
             $event->setResponse(new JsonResponse([
                 'errors' => [

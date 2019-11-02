@@ -49,6 +49,14 @@ class LoaderRegister implements RegisterInterface
         return $this->getOriginal()->hasType($type);
     }
 
+    /**
+     * @inheritDoc
+     */
+    public function jsonSerialize()
+    {
+        return $this->getOriginal()->jsonSerialize();
+    }
+
     private function getOriginal(): RegisterInterface
     {
         if ($this->original === null) {

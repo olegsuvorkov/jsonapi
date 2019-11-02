@@ -123,10 +123,42 @@ abstract class AbstractController extends OriginalAbstractController implements 
         ]);
     }
 
-    protected function getList(Request $request, ContextInterface $context)
+    public function patch(Request $request, string $id, ContextInterface $context): Response
     {
         $metadata = $context->getMetadata();
-        $repository = $metadata->getRepository();
+        $item = $metadata->find($id);
+        $metadata->denyAccessUnlessGranted('update', $item);
+        $entity = $this->deserialize($request->getContent(), $context, [
+            'allow_create' => true,
+        ]);
+        if ($entity !== $item) {
+            throw new BadRequestHttpException();
+        }
+        $em = $metadata->getEntityManager();
+        $em->persist($entity);
+        $em->flush();
+        return $this->json($entity, Response::HTTP_CREATED, [
+            'Location' => $metadata->generateEntityUrl($entity),
+            'Content-Type' => JsonVndApiEncoder::FORMAT,
+        ], [
+            'context' => $context,
+        ]);
+    }
+
+    public function delete(string $id, ContextInterface $context)
+    {
+        $metadata = $context->getMetadata();
+        $item = $metadata->find($id);
+        $metadata->denyAccessUnlessGranted('delete', $item);
+        $em = $metadata->getEntityManager();
+        $em->remove($item);
+        $em->flush();
+        return $this->json('', Response::HTTP_NO_CONTENT);
+    }
+
+    protected function getList(Request $request, ContextInterface $context)
+    {
+        $repository = $context->getRepository();
         if (($repository instanceof FilterRepositoryInterface) &&
             ($form = $this->createFilter())
         ) {
@@ -161,7 +193,7 @@ abstract class AbstractController extends OriginalAbstractController implements 
     protected function json($data, int $status = 200, array $headers = [], array $context = []): JsonResponse
     {
         $headers['Content-Type'] = JsonVndApiEncoder::FORMAT;
-        return new JsonResponse($this->serialize($data, $context), $status, $headers, true);
+        return new JsonResponse(is_string($data) ? $data : $this->serialize($data, $context), $status, $headers, true);
     }
 
     /**

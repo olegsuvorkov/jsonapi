@@ -56,9 +56,11 @@ class ContextInclude implements ContextIncludeInterface
     protected function addToStack($data, array &$stack)
     {
         $data = $this->field->getValue($data);
-        if (!in_array($data, $stack, true)) {
-            $stack[] = $data;
+        if ($data) {
+            if (!in_array($data, $stack, true)) {
+                $stack[] = $data;
+            }
+            $this->register($this->field->getOption('target'), $data, $stack);
         }
-        $this->register($this->field->getOption('target'), $data, $stack);
     }
 }

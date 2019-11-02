@@ -33,13 +33,13 @@ class RouteLoader implements ApiUrlGeneratorInterface
         ]],
         'create'               => ['create',              self::BASE_PATH,          Request::METHOD_POST, [
         ]],
-        'get'                  => ['fetch',               self::ENTITY_PATH,        Request::METHOD_GET, [
+        'delete'               => ['delete',              self::ENTITY_PATH,        Request::METHOD_DELETE, [
             'id'           => '[^/]+',
         ]],
         'patch'                => ['patch',               self::ENTITY_PATH,        Request::METHOD_PATCH, [
             'id'           => '[^/]+',
         ]],
-        'delete'               => ['delete',              self::ENTITY_PATH,        Request::METHOD_DELETE, [
+        'get'                  => ['fetch',               self::ENTITY_PATH,        Request::METHOD_GET, [
             'id'           => '[^/]+',
         ]],
         'relationships'        => ['relationships',       self::RELATIONSHIPS_PATH, Request::METHOD_GET, [

@@ -135,7 +135,7 @@ interface MetadataInterface extends SecurityStrategyInterface, \JsonSerializable
      * @param int|null $length
      * @return bool
      */
-    public function isNew(string $id, int &$length = null): bool;
+    public function isNew(?string $id, int &$length = null): bool;
 
     /**
      * @param string $id

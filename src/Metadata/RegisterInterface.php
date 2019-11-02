@@ -5,7 +5,7 @@ namespace JsonApi\Metadata;
 /**
  * @package JsonApi\Metadata
  */
-interface RegisterInterface
+interface RegisterInterface extends \JsonSerializable
 {
     /**
      * @param string|object $class

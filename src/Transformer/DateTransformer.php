@@ -77,6 +77,8 @@ class DateTransformer implements TransformerInterface
      */
     public function serializeOptions(array $options): array
     {
-        return [];
+        return [
+            'type' => $this->getType(),
+        ];
     }
 }

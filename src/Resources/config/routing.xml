@@ -14,5 +14,9 @@
             <argument type="collection"/>
         </service>
         <service id="JsonApi\Router\ApiUrlGeneratorInterface" alias="JsonApi\Router\RouteLoader"/>
+        <service id="JsonApi\Controller\SchemaController" public="true">
+            <argument type="service" id="JsonApi\Metadata\RegisterInterface"/>
+            <argument type="string">%json_api_path_prefix%</argument>
+        </service>
     </services>
 </container>

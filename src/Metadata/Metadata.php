@@ -429,10 +429,10 @@ class Metadata implements MetadataInterface
         return $this->reverseTransformId($ids);
     }
 
-    public function isNew(string $id, int &$length = null): bool
+    public function isNew(?string $id, int &$length = null): bool
     {
         $length = count($this->identifiers);
-        return 0 === strncmp(str_repeat(':', $length), $id, $length) && strlen($id) > $length;
+        return $id === null || 0 === strncmp(str_repeat(':', $length), $id, $length) && strlen($id) > $length;
     }
 
     /**
@@ -604,25 +604,12 @@ class Metadata implements MetadataInterface
      */
     public function jsonSerialize()
     {
-        $data = [
+        return [
             'type' => $this->type,
-            'identifiers' => [],
-            'attributes' => [],
-            'relationships' => [],
-            'discrimination' => [],
+            'identifiers' => $this->identifiers,
+            'attributes' => $this->attributes,
+            'relationships' => $this->relationships,
+            'discrimination' => $this->discriminatorMap,
         ];
-        foreach ($this->discriminatorMap as $discrimination) {
-            $data['discrimination'][] = $discrimination->getType();
-        }
-        foreach ($this->identifiers as $field) {
-            $data['identifiers'][$field->getSerializeName()] = $field;
-        }
-        foreach ($this->attributes as $field) {
-            $data['attributes'][$field->getSerializeName()] = $field;
-        }
-        foreach ($this->relationships as $field) {
-            $data['relationships'][$field->getSerializeName()] = $field;
-        }
-        return $data;
     }
 }

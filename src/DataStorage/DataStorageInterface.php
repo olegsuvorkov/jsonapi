@@ -14,7 +14,7 @@ interface DataStorageInterface
      * @param string $id
      * @return object
      */
-    public function get(MetadataInterface $metadata, string $id);
+    public function get(MetadataInterface $metadata, ?string $id);
 
     /**
      * @param $object

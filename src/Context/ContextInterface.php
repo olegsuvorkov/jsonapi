@@ -2,6 +2,8 @@
 
 namespace JsonApi\Context;
 
+use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\Common\Persistence\ObjectRepository;
 use JsonApi\ContextInclude\ContextIncludeInterface;
 use JsonApi\Metadata\MetadataInterface;
 use JsonApi\Metadata\RegisterInterface;
@@ -20,4 +22,14 @@ interface ContextInterface extends RegisterInterface
      * @return ContextIncludeInterface
      */
     public function getInclude(): ContextIncludeInterface;
+
+    /**
+     * @return ObjectManager
+     */
+    public function getEntityManager(): ObjectManager;
+
+    /**
+     * @return ObjectRepository
+     */
+    public function getRepository(): ObjectRepository;
 }

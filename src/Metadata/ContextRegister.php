@@ -74,4 +74,12 @@ class ContextRegister extends Register
         } while ($item = $item->getParent());
         return null;
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function jsonSerialize()
+    {
+        return $this->original->jsonSerialize();
+    }
 }

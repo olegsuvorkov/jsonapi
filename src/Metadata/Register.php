@@ -53,4 +53,12 @@ class Register implements RegisterInterface
     {
         return isset($this->map[$type]);
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function jsonSerialize()
+    {
+        return array_values($this->map);
+    }
 }

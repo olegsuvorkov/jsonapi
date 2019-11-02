@@ -51,6 +51,7 @@ class EnumTransformer extends Transformer
     public function serializeOptions(array $options): array
     {
         return [
+            'type' => $this->getType(),
             'choices' => $options['choices'],
         ];
     }

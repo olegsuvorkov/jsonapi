@@ -72,7 +72,7 @@ class FieldBuilderFactory implements FieldBuilderFactoryInterface
                 if ($field !== null) {
                     $list[$name] = $field;
                 } else {
-                    throw new BuilderException();
+                    throw new BuilderException(sprintf('Invalid field `%s`', $name));
                 }
             }
             return $list;
@@ -117,6 +117,12 @@ class FieldBuilderFactory implements FieldBuilderFactoryInterface
         if ($key === 'context') {
             if (is_bool($value)) {
                 $builder->context = $value;
+            } else {
+                throw BuilderException::invalidPropertyExpected('context', 'bool');
+            }
+        } elseif ($key === 'serialize_name') {
+            if (is_string($value)) {
+                $builder->serializeName = $value;
             } else {
                 throw BuilderException::invalidPropertyExpected('context', 'bool');
             }

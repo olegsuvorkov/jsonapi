@@ -42,5 +42,10 @@ interface TransformerInterface
      */
     public function reverseTransform($data, array $options);
 
+    /**
+     * @param array $options
+     * @return array
+     * @throws InvalidArgumentException
+     */
     public function serializeOptions(array $options): array;
 }

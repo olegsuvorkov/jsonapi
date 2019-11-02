@@ -96,8 +96,12 @@ class RelationshipTransformer implements TransformerInterface
 
     public function serializeOptions(array $options): array
     {
+        if (!isset($options['target'])) {
+            throw new InvalidArgumentException();
+        }
         return [
             'target' => $options['target']->getType(),
+            'multiple' => false,
         ];
     }
 }
