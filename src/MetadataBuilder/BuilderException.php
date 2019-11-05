@@ -2,7 +2,7 @@
 
 namespace JsonApi\MetadataBuilder;
 
-use Exception;
+use JsonApi\Exception\Exception;
 use Throwable;
 
 /**

@@ -20,6 +20,9 @@
         <service id="JsonApi\Transformer\IntegerTransformer">
             <tag name="json_api.transformer"/>
         </service>
+        <service id="JsonApi\Transformer\ArrayTransformer">
+            <tag name="json_api.transformer"/>
+        </service>
         <service id="JsonApi\Transformer\MultipleRelationshipTransformer">
             <argument type="service" id="JsonApi\DataStorage\DataStorageInterface"/>
             <argument type="service" id="JsonApi\Transformer\RelationshipTransformer"/>

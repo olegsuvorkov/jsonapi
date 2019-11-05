@@ -7,7 +7,7 @@ use Throwable;
 /**
  * @package JsonApi\Exception
  */
-class InvalidTypeException extends \Exception
+class InvalidTypeException extends Exception
 {
     public static function undefinedType(string $type, Throwable $previous = null)
     {

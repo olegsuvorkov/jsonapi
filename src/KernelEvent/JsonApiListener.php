@@ -2,6 +2,7 @@
 
 namespace JsonApi\KernelEvent;
 
+use JsonApi\Exception\Exception;
 use JsonApi\Context\Context;
 use JsonApi\ContextInclude\ContextIncludeBuilder;
 use JsonApi\Exception\ParseUrlException;
@@ -11,6 +12,7 @@ use JsonApi\Serializer\Encoder\JsonVndApiEncoder;
 use Symfony\Component\Debug\Exception\FlattenException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Translation\Translator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
@@ -111,6 +113,16 @@ class JsonApiListener implements EventSubscriberInterface
         $request = $event->getRequest();
         if (!in_array(JsonVndApiEncoder::FORMAT, $request->getAcceptableContentTypes())) {
             return;
+        }
+        $exception = $event->getException();
+        if ($exception instanceof BadRequestHttpException || $exception instanceof Exception) {
+            $response = new JsonResponse([
+                'errors' => [
+                    'status' => $exception->getStatusCode(),
+                    'title' => $exception->getMessage(),
+                ]
+            ]);
+            $event->setResponse($response);
         }
     }
 }

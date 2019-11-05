@@ -2,10 +2,12 @@
 
 namespace JsonApi\Metadata;
 
+use JsonApi\Exception\Exception;
+
 /**
  * @package JsonApi\Metadata
  */
-class UndefinedMetadataException extends \Exception
+class UndefinedMetadataException extends Exception
 {
     public static function notFindByClass(string $class): UndefinedMetadataException
     {
