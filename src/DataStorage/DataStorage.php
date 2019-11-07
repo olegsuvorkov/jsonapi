@@ -13,7 +13,7 @@ class DataStorage implements DataStorageInterface
     /**
      * @inheritDoc
      */
-    public function get(MetadataInterface $metadata, string $id)
+    public function get(MetadataInterface $metadata, ?string $id)
     {
         $item = $metadata->find($id);
         if ($item) {

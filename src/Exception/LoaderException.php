@@ -4,7 +4,7 @@ namespace JsonApi\Exception;
 
 use Throwable;
 
-class LoaderException extends \Exception
+class LoaderException extends Exception
 {
     public static function invalidMethods(string $class, array $methods)
     {

@@ -71,4 +71,14 @@ class DateTransformer implements TransformerInterface
             throw new InvalidArgumentException();
         }
     }
+
+    /**
+     * @inheritDoc
+     */
+    public function serializeOptions(array $options): array
+    {
+        return [
+            'type' => $this->getType(),
+        ];
+    }
 }

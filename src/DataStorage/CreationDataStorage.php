@@ -30,7 +30,7 @@ class CreationDataStorage implements DataStorageInterface
     /**
      * @inheritDoc
      */
-    public function get(MetadataInterface $metadata, string $id)
+    public function get(MetadataInterface $metadata, ?string $id)
     {
         if ($metadata->isNew($id)) {
             $type = $metadata->getType();

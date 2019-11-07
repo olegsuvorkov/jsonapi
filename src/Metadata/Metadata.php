@@ -429,10 +429,10 @@ class Metadata implements MetadataInterface
         return $this->reverseTransformId($ids);
     }
 
-    public function isNew(string $id, int &$length = null): bool
+    public function isNew(?string $id, int &$length = null): bool
     {
         $length = count($this->identifiers);
-        return 0 === strncmp(str_repeat(':', $length), $id, $length) && strlen($id) > $length;
+        return $id === null || 0 === strncmp(str_repeat(':', $length), $id, $length) && strlen($id) > $length;
     }
 
     /**
@@ -597,5 +597,19 @@ class Metadata implements MetadataInterface
     public function __wakeup()
     {
 
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function jsonSerialize()
+    {
+        return [
+            'type' => $this->type,
+            'identifiers' => $this->identifiers,
+            'attributes' => $this->attributes,
+            'relationships' => $this->relationships,
+            'discrimination' => $this->discriminatorMap,
+        ];
     }
 }

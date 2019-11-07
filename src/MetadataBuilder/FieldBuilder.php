@@ -16,6 +16,11 @@ class FieldBuilder
     public $context = false;
 
     /**
+     * @var string|null
+     */
+    public $serializeName = null;
+
+    /**
      * @var bool
      */
     public $read = true;
@@ -86,6 +91,9 @@ class FieldBuilder
             $getter = $this->read ? $this->getMethods($this->getter, ['get', 'is', 'has', 'getIs']) : null;
             $setter = $this->write ? $this->getMethods($this->setter, ['set', 'setIs', 'setHas']) : null;
             $this->field = new Field($this->name, $this->context, $getter, $setter);
+            if ($this->serializeName) {
+                $this->field->setSerializeName($this->serializeName);
+            }
             try {
                 $this->configurator->configure($this->field, $this->options, $map);
             } catch (BuilderException $e) {

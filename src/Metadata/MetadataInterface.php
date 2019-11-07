@@ -11,7 +11,7 @@ use JsonApi\Transformer\InvalidArgumentException;
 /**
  * @package JsonApi\ClassMetadata
  */
-interface MetadataInterface extends SecurityStrategyInterface
+interface MetadataInterface extends SecurityStrategyInterface, \JsonSerializable
 {
     /**
      * @param MetadataContainerInterface $metadataContainer
@@ -135,7 +135,7 @@ interface MetadataInterface extends SecurityStrategyInterface
      * @param int|null $length
      * @return bool
      */
-    public function isNew(string $id, int &$length = null): bool;
+    public function isNew(?string $id, int &$length = null): bool;
 
     /**
      * @param string $id

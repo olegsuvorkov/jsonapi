@@ -99,4 +99,15 @@ class MultipleRelationshipTransformer implements TransformerInterface
         }
         return $result;
     }
+
+    public function serializeOptions(array $options): array
+    {
+        if (!isset($options['target'])) {
+            throw new InvalidArgumentException();
+        }
+        return [
+            'target' => $options['target']->getType(),
+            'multiple' => true,
+        ];
+    }
 }

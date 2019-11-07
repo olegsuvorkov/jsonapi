@@ -5,7 +5,7 @@ namespace JsonApi\Exception;
 /**
  * @package JsonApi\Exception
  */
-class ParseUrlException extends \Exception
+class ParseUrlException extends Exception
 {
     public static function invalidQueryParameter(string $parameter)
     {

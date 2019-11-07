@@ -2,9 +2,11 @@
 
 namespace JsonApi\Transformer;
 
+use JsonApi\Exception\Exception;
+
 /**
  * @package JsonApi\Transformer
  */
-class UndefinedTransformerException extends InvalidArgumentException
+class UndefinedTransformerException extends Exception
 {
 }

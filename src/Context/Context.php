@@ -2,6 +2,8 @@
 
 namespace JsonApi\Context;
 
+use Doctrine\Common\Persistence\ObjectManager;
+use Doctrine\Common\Persistence\ObjectRepository;
 use JsonApi\ContextInclude\ContextIncludeInterface;
 use JsonApi\Metadata\MetadataInterface;
 use JsonApi\Metadata\RegisterInterface;
@@ -86,5 +88,29 @@ class Context implements ContextInterface
     {
         $this->include = $include;
         return $this;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getEntityManager(): ObjectManager
+    {
+        return $this->metadata->getEntityManager();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getRepository(): ObjectRepository
+    {
+        return $this->metadata->getRepository();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function jsonSerialize()
+    {
+        return $this->register;
     }
 }

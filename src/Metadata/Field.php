@@ -10,7 +10,7 @@ use JsonApi\Transformer\TransformerInterface;
 /**
  * @package JsonApi\Metadata\Field
  */
-class Field implements FieldInterface
+class Field implements FieldInterface, \JsonSerializable
 {
     /**
      * @var string
@@ -147,14 +147,22 @@ class Field implements FieldInterface
     {
         $value = $this->getValue($object);
         if ($value !== null) {
-            $value = $this->transformer->transform($value, $this->options);
+            try {
+                $value = $this->transformer->transform($value, $this->options);
+            } catch (InvalidArgumentException $e) {
+                throw new InvalidArgumentException(sprintf('Invalid normalize `%s`', $this->name), $e->getCode(), $e);
+            }
         }
         return $value;
     }
 
     public function reverseTransform(array $data)
     {
-        return $this->transformer->reverseTransform($data, $this->options);
+        try {
+            return $this->transformer->reverseTransform($data, $this->options);
+        } catch (InvalidArgumentException $e) {
+            throw new InvalidArgumentException(sprintf('Invalid reverseTransform in field `%s`', $this->name), 0, $e);
+        }
     }
 
     /**
@@ -163,19 +171,34 @@ class Field implements FieldInterface
     public function denormalize(array $data, array $options)
     {
         if (array_key_exists($this->serializeName, $data)) {
-            return $this->transformer->reverseTransform($data[$this->serializeName], $this->options);
+            try {
+                return $this->transformer->reverseTransform($data[$this->serializeName], $this->options);
+            } catch (InvalidArgumentException $e) {
+                throw new InvalidArgumentException(sprintf('Invalid denormalize in field `%s`', $this->name), 0, $e);
+            }
         } else {
-            throw new InvalidArgumentException();
+            throw new InvalidArgumentException(sprintf('Invalid denormalize in field `%s`', $this->name));
         }
     }
 
     public function setDenormalizeValue($object, array $data, array $options): void
     {
         if ($this->setter !== null && array_key_exists($this->serializeName, $data)) {
-            $value = $this->transformer->reverseTransform($data[$this->serializeName], array_merge($options, $this->options, [
-                'data' => $this->getValue($object),
-            ]));
-            $object->{$this->setter}($value);
+            try {
+                $value = $data[$this->serializeName];
+                if ($value !== null) {
+                    $value = $this->transformer->reverseTransform($value, array_merge($options, $this->options, [
+                        'data' => $this->getValue($object),
+                    ]));
+                }
+                $object->{$this->setter}($value);
+            } catch (InvalidArgumentException $e) {
+                throw new InvalidArgumentException(
+                    sprintf('Invalid setDenormalizeValue in field `%s`', $this->name),
+                    0,
+                    $e
+                );
+            }
         }
     }
 
@@ -366,5 +389,21 @@ class Field implements FieldInterface
             'type',
             'options'
         ];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function jsonSerialize()
+    {
+        try {
+            return [
+                'name' => $this->serializeName,
+                'context' => $this->context,
+                'options' => $this->transformer->serializeOptions($this->options),
+            ];
+        } catch (InvalidArgumentException $e) {
+            throw new InvalidArgumentException("Undefined relationship for `{$this->name}`");
+        }
     }
 }

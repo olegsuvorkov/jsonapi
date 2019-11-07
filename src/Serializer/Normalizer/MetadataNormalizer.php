@@ -99,7 +99,7 @@ class MetadataNormalizer implements ContextAwareNormalizerInterface,
     public function denormalize($data, $type, $format = null, array $context = [])
     {
         $storage = $context['storage'] ?? $this->storage;
-        $context['storage'] = $storage;
+        
         if (is_array($data)) {
             $data = array_merge(self::$defaults, $data);
         } else {
