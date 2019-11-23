@@ -17,6 +17,7 @@ class MultipleRelationshipTransformer implements TransformerInterface
      * @var TransformerInterface
      */
     private $relationshipTransformer;
+
     /**
      * @var DataStorageInterface
      */

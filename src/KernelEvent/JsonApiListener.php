@@ -8,7 +8,7 @@ use JsonApi\ContextInclude\ContextIncludeBuilder;
 use JsonApi\Exception\ParseUrlException;
 use JsonApi\Metadata\ContextRegisterFactory;
 use JsonApi\Metadata\UndefinedMetadataException;
-use JsonApi\Serializer\Encoder\JsonVndApiEncoder;
+use JsonApi\Normalizer\SerializerInterface;
 use Symfony\Component\Debug\Exception\FlattenException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -74,10 +74,7 @@ class JsonApiListener implements EventSubscriberInterface
         if (0 !== strncmp($request->getPathInfo(), $this->prefix, strlen($this->prefix))) {
             return;
         }
-        if ($request->getPathInfo() === $this->prefix.'schema.js') {
-            return;
-        }
-        if (!in_array(JsonVndApiEncoder::FORMAT, $request->getAcceptableContentTypes())) {
+        if (!in_array(SerializerInterface::FORMAT, $request->getAcceptableContentTypes())) {
             $event->setResponse(new JsonResponse([
                 'errors' => [
                     'status' => Response::HTTP_BAD_REQUEST,
@@ -111,7 +108,7 @@ class JsonApiListener implements EventSubscriberInterface
     public function onKernelException(ExceptionEvent $event)
     {
         $request = $event->getRequest();
-        if (!in_array(JsonVndApiEncoder::FORMAT, $request->getAcceptableContentTypes())) {
+        if (!in_array(SerializerInterface::FORMAT, $request->getAcceptableContentTypes())) {
             return;
         }
         $exception = $event->getException();

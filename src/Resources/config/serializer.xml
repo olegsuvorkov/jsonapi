@@ -52,18 +52,6 @@
             <argument type="service" id="JsonApi\Router\ApiUrlGeneratorInterface"/>
         </service>
         <service id="JsonApi\Metadata\MetadataContainerInterface" alias="JsonApi\Metadata\MetadataContainer"/>
-        <service id="JsonApi\Serializer\Encoder\JsonVndApiEncoder">
-            <tag name="serializer.encoder" priority="1000"/>
-        </service>
-        <service id="JsonApi\Serializer\Normalizer\DataNormalizer">
-            <argument type="service" id="JsonApi\DataStorage\DataStorageInterface"/>
-            <tag name="serializer.normalizer" priority="1001"/>
-        </service>
-        <service id="JsonApi\Serializer\Normalizer\MetadataNormalizer">
-            <argument type="service" id="JsonApi\DataStorage\DataStorageInterface"/>
-            <argument type="service" id="JsonApi\Metadata\RegisterInterface"/>
-            <tag name="serializer.normalizer" priority="1000"/>
-        </service>
         <service id="JsonApi\Metadata\ContextRegisterFactory">
             <argument type="service" id="JsonApi\Metadata\RegisterInterface"/>
         </service>
@@ -73,5 +61,12 @@
             <argument type="string"/>
             <tag name="kernel.event_subscriber"/>
         </service>
+        <service id="JsonApi\Normalizer\Normalizer"/>
+        <service id="JsonApi\Normalizer\Serializer">
+            <argument type="service" id="JsonApi\DataStorage\DataStorageInterface"/>
+            <argument type="service" id="JsonApi\Normalizer\Normalizer"/>
+            <argument type="collection"/>
+        </service>
+        <service id="JsonApi\Normalizer\SerializerInterface" alias="JsonApi\Normalizer\Serializer"/>
     </services>
 </container>

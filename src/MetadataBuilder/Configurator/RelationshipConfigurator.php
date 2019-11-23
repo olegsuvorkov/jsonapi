@@ -37,13 +37,27 @@ class RelationshipConfigurator implements ConfiguratorInterface
      */
     public function configure(Field $field, array $options, array $map): void
     {
-        $multiple = $options['multiple'] ?? false;
-        if (!is_bool($multiple)) {
-            throw new BuilderException('Invalid property multiple expected bool');
+        $multiple = false;
+        $type = null;
+        foreach ($options as $key => $value) {
+            if ($key === 'multiple') {
+                if (is_bool($value)) {
+                    $multiple = $value;
+                } else {
+                    throw new BuilderException('Invalid property multiple expected bool');
+                }
+            } elseif ($key === 'type') {
+                if (is_string($value)) {
+                    $type = $value;
+                } else {
+                    throw new BuilderException('Invalid property type expected string');
+                }
+            } else {
+                throw new BuilderException("Undefined property `{$key}` expected string");
+            }
         }
         $field->setTransformer($multiple ? $this->multiple : $this->single);
-        $type = $options['type'] ?? null;
-        if (!is_string($type)) {
+        if ($type === null) {
             throw new BuilderException('Invalid property type expected string');
         }
         $target = $map[$type] ?? null;

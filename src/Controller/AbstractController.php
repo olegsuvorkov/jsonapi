@@ -5,7 +5,8 @@ namespace JsonApi\Controller;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\ManagerRegistry;
 use JsonApi\Context\ContextInterface;
-use JsonApi\Serializer\Encoder\JsonVndApiEncoder;
+use JsonApi\Metadata\UndefinedMetadataException;
+use JsonApi\Normalizer\SerializerInterface;
 use JsonApi\Transformer\InvalidArgumentException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController as OriginalAbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
@@ -15,17 +16,10 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\HttpKernel\HttpKernelInterface;
-use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
-use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
-use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Templating\EngineInterface;
-use Twig\Environment;
 use Vision\SystemBundle\Repository\FilterRepositoryInterface;
 
 /**
@@ -34,19 +28,26 @@ use Vision\SystemBundle\Repository\FilterRepositoryInterface;
 abstract class AbstractController extends OriginalAbstractController implements ControllerInterface
 {
     /**
-     * @inheritDoc
+     * @param Request $request
+     * @param ContextInterface $context
+     * @return Response
+     * @throws UndefinedMetadataException
      */
     public function list(Request $request, ContextInterface $context): Response
     {
         $context->getMetadata()->denyAccessUnlessGranted('list');
         $list = $this->getList($request, $context);
-        return $this->json($list, Response::HTTP_OK, [], [
-            'context' => $context,
+        return $this->serialize($list, Response::HTTP_OK, [], [
+            'attributes' => true,
+            'relationships' => true,
         ]);
     }
 
     /**
-     * @inheritDoc
+     * @param string $id
+     * @param ContextInterface $context
+     * @return Response
+     * @throws UndefinedMetadataException
      */
     public function fetch(string $id, ContextInterface $context): Response
     {
@@ -56,13 +57,18 @@ abstract class AbstractController extends OriginalAbstractController implements 
         if (!$item) {
             throw new NotFoundHttpException();
         }
-        return $this->json($item, Response::HTTP_OK, [], [
-            'context' => $context,
+        return $this->serialize($item, Response::HTTP_OK, [], [
+            'attributes' => true,
+            'relationships' => true,
         ]);
     }
 
     /**
-     * @inheritDoc
+     * @param string $id
+     * @param string $relationship
+     * @param ContextInterface $context
+     * @return Response
+     * @throws UndefinedMetadataException
      */
     public function relationships(string $id, string $relationship, ContextInterface $context): Response
     {
@@ -71,15 +77,21 @@ abstract class AbstractController extends OriginalAbstractController implements 
         $metadata->denyAccessUnlessGranted('view', $item);
         $field = $metadata->getOriginalMetadata($item)->getRelationship($relationship);
         $field->denyAccessUnlessGranted('list');
-        return $this->json($field->getValue($item), Response::HTTP_OK, [], [
-            'context' => $context,
+        return $this->serialize($field->getValue($item), Response::HTTP_OK, [], [
             'relationship' => $field,
-            'only_identity' => true,
+            'attributes' => false,
+            'relationships' => false,
         ]);
     }
 
     /**
-     * @inheritDoc
+     * @param Request $request
+     * @param string $id
+     * @param string $relationship
+     * @param ContextInterface $context
+     * @return Response
+     * @throws InvalidArgumentException
+     * @throws UndefinedMetadataException
      */
     public function relationshipsDelete(
         Request $request,
@@ -111,53 +123,72 @@ abstract class AbstractController extends OriginalAbstractController implements 
             throw new InvalidArgumentException();
         }
         $em->flush();
-        return $this->json($relationships->toArray(), Response::HTTP_OK, [], [
+        return $this->serialize($relationships->toArray(), Response::HTTP_OK, [], [
             'context' => $context,
             'relationship' => $field,
-            'only_identity' => true,
+            'attributes' => false,
+            'relationships' => false,
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @param ContextInterface $context
+     * @return Response
+     * @throws UndefinedMetadataException
+     */
     public function create(Request $request, ContextInterface $context): Response
     {
-        $entity = $this->deserialize($request->getContent(), $context, [
-            'allow_create' => true,
-        ]);
+        $entity = $this->deserialize($request, ['allow_create' => true]);
         $metadata = $context->getMetadata();
         $metadata->denyAccessUnlessGranted('create', $entity);
         $em = $metadata->getEntityManager();
         $em->persist($entity);
         $em->flush();
-        return $this->json($entity, Response::HTTP_CREATED, [
+        return $this->serialize($entity, Response::HTTP_CREATED, [
             'Location' => $metadata->generateEntityUrl($entity),
-            'Content-Type' => JsonVndApiEncoder::FORMAT,
+            'Content-Type' => SerializerInterface::FORMAT,
         ], [
-            'context' => $context,
+            'attributes' => true,
+            'relationships' => true,
         ]);
     }
 
+    /**
+     * @param Request $request
+     * @param string $id
+     * @param ContextInterface $context
+     * @return Response
+     * @throws UndefinedMetadataException
+     */
     public function patch(Request $request, string $id, ContextInterface $context): Response
     {
         $metadata = $context->getMetadata();
         $item = $metadata->find($id);
         $metadata->denyAccessUnlessGranted('update', $item);
-        $entity = $this->deserialize($request->getContent(), $context, [
-            'allow_create' => true,
-        ]);
+        $entity = $this->deserialize($request, ['allow_create' => true]);
         if ($entity !== $item) {
             throw new BadRequestHttpException();
         }
         $em = $metadata->getEntityManager();
         $em->persist($entity);
         $em->flush();
-        return $this->json($entity, Response::HTTP_CREATED, [
+        return $this->serialize($entity, Response::HTTP_CREATED, [
             'Location' => $metadata->generateEntityUrl($entity),
-            'Content-Type' => JsonVndApiEncoder::FORMAT,
+            'Content-Type' => SerializerInterface::FORMAT,
         ], [
             'context' => $context,
+            'attributes' => true,
+            'relationships' => true,
         ]);
     }
 
+    /**
+     * @param string $id
+     * @param ContextInterface $context
+     * @return Response
+     * @throws UndefinedMetadataException
+     */
     public function delete(string $id, ContextInterface $context)
     {
         $metadata = $context->getMetadata();
@@ -166,7 +197,10 @@ abstract class AbstractController extends OriginalAbstractController implements 
         $em = $metadata->getEntityManager();
         $em->remove($item);
         $em->flush();
-        return $this->json('', Response::HTTP_NO_CONTENT);
+        return $this->serialize('', Response::HTTP_NO_CONTENT, [], [
+            'attributes' => true,
+            'relationships' => true,
+        ]);
     }
 
     protected function getList(Request $request, ContextInterface $context)
@@ -194,10 +228,13 @@ abstract class AbstractController extends OriginalAbstractController implements 
 
     /**
      * @inheritDoc
+     * @throws UndefinedMetadataException
      */
-    protected function serialize($data, array $context = []): string
+    protected function serialize($data, int $status = 200, array $headers = [], array $options = []): Response
     {
-        return $this->get('serializer')->serialize($data, JsonVndApiEncoder::FORMAT, $context);
+        $data = $this->getSerializer()->serialize($data, $options, $this->getContext());
+        $headers['Content-Type'] = SerializerInterface::FORMAT;
+        return new JsonResponse($data, $status, $headers, true);
     }
 
     /**
@@ -205,32 +242,38 @@ abstract class AbstractController extends OriginalAbstractController implements 
      */
     protected function json($data, int $status = 200, array $headers = [], array $context = []): JsonResponse
     {
-        $data = is_string($data) ? $data : $this->serialize($data, $context);
-        $headers['Content-Type'] = JsonVndApiEncoder::FORMAT;
-        return $this->rawJson($data, $status, $headers, $context);
-    }
-
-    protected function rawJson($data, int $status = 200, array $headers = [], array $context = []): JsonResponse
-    {
-        $data = is_string($data) ? $data : $this->container->get('serializer')->serialize($data, 'json', array_merge([
-            'json_encode_options' => JsonResponse::DEFAULT_ENCODING_OPTIONS,
-        ], $context));
-        return new JsonResponse($data, $status, $headers, true);
-
+        $headers['Content-Type'] = SerializerInterface::FORMAT;
+        if (is_string($data)) {
+            return new JsonResponse($data, $status, $headers, true);
+        } else {
+            return (new JsonResponse('', $status, $headers))
+                ->setEncodingOptions(JsonResponse::DEFAULT_ENCODING_OPTIONS)
+                ->setData($data);
+        }
     }
 
     /**
      * @inheritDoc
      */
-    protected function deserialize($data, ContextInterface $context, array $params)
+    protected function deserialize(Request $request, array $options = [])
     {
-        $type = $context->getMetadata()->getType();
-        return $this->get('serializer')->deserialize($data, $type, JsonVndApiEncoder::FORMAT, $params);
+        /** @var ContextInterface $context */
+        $context = $request->attributes->get('context');
+        return $this->getSerializer()->deserialize($request, $options, $context);
     }
 
-    protected function decode($data)
+    protected function getContext(): ContextInterface
     {
-        return $this->get('serializer')->decode($data, JsonVndApiEncoder::FORMAT);
+        /** @var RequestStack $requestStack */
+        $requestStack = $this->get('request_stack');
+        /** @var Request $request */
+        $request = $requestStack->getCurrentRequest();
+        return $request->attributes->get('context');
+    }
+
+    protected function getSerializer(): SerializerInterface
+    {
+        return $this->get('serializer');
     }
 
     public static function getSubscribedServices()
@@ -245,5 +288,4 @@ abstract class AbstractController extends OriginalAbstractController implements 
             'parameter_bag' => '?'.ContainerBagInterface::class,
         ];
     }
-
 }
