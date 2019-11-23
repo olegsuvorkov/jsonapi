@@ -29,15 +29,26 @@ class Context implements ContextInterface
     private $include;
 
     /**
+     * @var array
+     */
+    private $meta;
+
+    /**
      * @param MetadataInterface $metadata
      * @param ContextIncludeInterface $include
      * @param RegisterInterface $register
+     * @param array $meta
      */
-    public function __construct(MetadataInterface $metadata, ContextIncludeInterface $include, RegisterInterface $register)
-    {
+    public function __construct(
+        MetadataInterface $metadata,
+        ContextIncludeInterface $include,
+        RegisterInterface $register,
+        array $meta
+    ) {
         $this->metadata = $metadata;
         $this->register = $register;
-        $this->include = $include;
+        $this->include  = $include;
+        $this->meta     = $meta;
     }
 
     /**
@@ -112,5 +123,13 @@ class Context implements ContextInterface
     public function jsonSerialize()
     {
         return $this->register;
+    }
+
+    /**
+     * @return array
+     */
+    public function getMeta(): array
+    {
+        return $this->meta;
     }
 }

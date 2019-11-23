@@ -3,6 +3,7 @@
 namespace JsonApi\Normalizer;
 
 use JsonApi\Metadata\MetadataInterface;
+use JsonApi\Transformer\InvalidArgumentException;
 
 /**
  * @package JsonApi\Normalizer
@@ -10,14 +11,9 @@ use JsonApi\Metadata\MetadataInterface;
 class Normalizer implements NormalizerInterface
 {
     /**
-     * @var Serializer
-     */
-    private $serializer;
-
-    /**
      * @inheritDoc
      */
-    public function normalize(MetadataInterface $metadata, $object, array $options = [])
+    public function normalize(MetadataInterface $metadata, $object, array $options = []): array
     {
         $data = [];
         if ($options['attributes'] && $metadata->getAttributes()) {
@@ -34,6 +30,13 @@ class Normalizer implements NormalizerInterface
         return $data;
     }
 
+    /**
+     * @param MetadataInterface $metadata
+     * @param $object
+     * @param array $options
+     * @return array|null
+     * @throws InvalidArgumentException
+     */
     public function normalizeAttributes(MetadataInterface $metadata, $object, array $options): ?array
     {
         $data = [];
@@ -43,6 +46,13 @@ class Normalizer implements NormalizerInterface
         return $data;
     }
 
+    /**
+     * @param MetadataInterface $metadata
+     * @param $object
+     * @param array $options
+     * @return array|null
+     * @throws InvalidArgumentException
+     */
     public function normalizeRelationships(MetadataInterface $metadata, $object, array $options): ?array
     {
         $data = [];
@@ -95,9 +105,4 @@ class Normalizer implements NormalizerInterface
     }
 
     public function denormalizeMeta(MetadataInterface $metadata, $entity, array $resource, array $options) {}
-
-    public function setSerializer(Serializer $serializer): void
-    {
-        $this->serializer = $serializer;
-    }
 }

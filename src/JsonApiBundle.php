@@ -2,6 +2,7 @@
 
 namespace JsonApi;
 
+use JsonApi\DependencyInjection\Compiler\NormalizerCompilerPass;
 use JsonApi\DependencyInjection\Compiler\RoutingCompilerPass;
 use JsonApi\DependencyInjection\Compiler\SecurityStrategyCompilerPass;
 use JsonApi\DependencyInjection\Compiler\TransformerCompilerPass;
@@ -21,5 +22,6 @@ class JsonApiBundle extends Bundle
         $container->addCompilerPass(new TransformerCompilerPass());
         $container->addCompilerPass(new RoutingCompilerPass());
         $container->addCompilerPass(new SecurityStrategyCompilerPass());
+        $container->addCompilerPass(new NormalizerCompilerPass());
     }
 }

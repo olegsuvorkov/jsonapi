@@ -2,6 +2,7 @@
 
 namespace JsonApi\DependencyInjection;
 
+use JsonApi\DependencyInjection\Compiler\NormalizerCompilerPass;
 use JsonApi\DependencyInjection\Compiler\RoutingCompilerPass;
 use JsonApi\DependencyInjection\Compiler\SecurityStrategyCompilerPass;
 use JsonApi\DependencyInjection\Compiler\TransformerCompilerPass;
@@ -31,6 +32,7 @@ class JsonApiExtension extends Extension
         RoutingCompilerPass::registerAutoconfiguration($container);
         SecurityStrategyCompilerPass::registerAutoconfiguration($container);
         TransformerCompilerPass::registerAutoconfiguration($container);
+        NormalizerCompilerPass::registerAutoconfiguration($container);
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('metadata.xml');
         $loader->load('serializer.xml');

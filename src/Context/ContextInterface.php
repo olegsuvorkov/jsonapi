@@ -32,4 +32,9 @@ interface ContextInterface extends RegisterInterface
      * @return ObjectRepository
      */
     public function getRepository(): ObjectRepository;
+
+    /**
+     * @return string[]
+     */
+    public function getMeta(): array;
 }

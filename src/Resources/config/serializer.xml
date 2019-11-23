@@ -63,9 +63,9 @@
         </service>
         <service id="JsonApi\Normalizer\Normalizer"/>
         <service id="JsonApi\Normalizer\Serializer">
-            <argument type="service" id="JsonApi\DataStorage\DataStorageInterface"/>
-            <argument type="service" id="JsonApi\Normalizer\Normalizer"/>
             <argument type="collection"/>
+            <argument type="service" id="JsonApi\Normalizer\Normalizer"/>
+            <argument type="service" id="JsonApi\DataStorage\DataStorageInterface"/>
         </service>
         <service id="JsonApi\Normalizer\SerializerInterface" alias="JsonApi\Normalizer\Serializer"/>
     </services>

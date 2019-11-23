@@ -88,6 +88,21 @@ class JsonApiListener implements EventSubscriberInterface
         $fields = $request->query->get('fields');
         $contextRegister  = $this->contextRegisterFactory->createContextRegister($fields);
         $type = $request->attributes->get('type', '');
+        $meta = $request->query->get('meta', '');
+        $metas = [];
+        if ($meta) {
+            if (!is_string($meta)) {
+                $event->setResponse(new JsonResponse([
+                    'errors' => [
+                        'status' => Response::HTTP_BAD_REQUEST,
+                    ]
+                ], Response::HTTP_BAD_REQUEST));
+                return;
+            }
+            foreach (explode(',', $meta) as $item) {
+                $metas[] = trim($item);
+            }
+        }
         try {
             $metadata = $contextRegister->getByType($type);
         } catch (UndefinedMetadataException $e) {
@@ -102,7 +117,7 @@ class JsonApiListener implements EventSubscriberInterface
         }
         $contextIncludeBuilder = new ContextIncludeBuilder($contextRegister, $type);
         $contextInclude = $contextIncludeBuilder->build($request->query->get('include', ''));
-        $request->attributes->set('context', new Context($metadata, $contextInclude, $contextRegister));
+        $request->attributes->set('context', new Context($metadata, $contextInclude, $contextRegister, $metas));
     }
 
     public function onKernelException(ExceptionEvent $event)

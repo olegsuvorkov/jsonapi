@@ -51,21 +51,26 @@ class Serializer implements SerializerInterface
     private $decode;
 
     /**
-     * @param DataStorageInterface $storage
-     * @param NormalizerInterface $defaultNormalizer
      * @param NormalizerInterface[] $normalizers
+     * @param NormalizerInterface $defaultNormalizer
+     * @param DataStorageInterface $storage
      */
     public function __construct(
-        DataStorageInterface $storage,
+        array $normalizers,
         NormalizerInterface $defaultNormalizer,
-        array $normalizers
+        DataStorageInterface $storage
     ) {
         $this->storage = $storage;
         $this->defaultNormalizer = $defaultNormalizer;
-        $defaultNormalizer->setSerializer($this);
-        $this->normalizers = $normalizers;
-        foreach ($this->normalizers as $normalizer) {
-            $normalizer->setSerializer($this);
+        $this->normalizers = [];
+        foreach ($normalizers as $type => $normalizer) {
+            if ($normalizer instanceof TypeNormalizerInterface) {
+                $type = $normalizer->getType();
+            }
+            if ($normalizer instanceof SerializerAwareInterface) {
+                $normalizer->setSerializer($this);
+            }
+            $this->normalizers[$type] = $normalizer;
         }
         $options = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT;
         $options|= JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
@@ -88,9 +93,11 @@ class Serializer implements SerializerInterface
 
     /**
      * @inheritDoc
+     * @throws UndefinedMetadataException
      */
     public function normalize($data, array $options, ContextInterface $context): array
     {
+        $options['meta'] = $context->getMeta();
         $structure   = [];
         $included    = [];
         if (is_iterable($data)) {
