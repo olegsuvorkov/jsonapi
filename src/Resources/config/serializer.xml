@@ -36,7 +36,14 @@
         <service id="JsonApi\Transformer\StringTransformer">
             <tag name="json_api.transformer"/>
         </service>
-        <service id="JsonApi\Transformer\DateTransformer">
+        <service id="json_api.transformer.datetime" class="JsonApi\Transformer\DateTimeTransformer">
+            <argument type="string">datetime</argument>
+            <argument type="string">Y-m-d\TH:i:s</argument>
+            <tag name="json_api.transformer"/>
+        </service>
+        <service id="json_api.transformer.date" class="JsonApi\Transformer\DateTimeTransformer">
+            <argument type="string">date</argument>
+            <argument type="string">Y-m-d</argument>
             <tag name="json_api.transformer"/>
         </service>
         <service id="JsonApi\Transformer\TransformerPool">

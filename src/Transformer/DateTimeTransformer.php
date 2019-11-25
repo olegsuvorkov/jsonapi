@@ -7,14 +7,34 @@ use DateTime;
 /**
  * @package JsonApi\Transformer
  */
-class DateTransformer implements TransformerInterface
+class DateTimeTransformer implements TransformerInterface
 {
+    /**
+     * @var string
+     */
+    private $type;
+
+    /**
+     * @var string
+     */
+    private $format;
+
+    /**
+     * @param string $type
+     * @param string $format
+     */
+    public function __construct(string $type, string $format)
+    {
+        $this->type = $type;
+        $this->format = $format;
+    }
+
     /**
      * @inheritDoc
      */
     public function getType(): string
     {
-        return 'date';
+        return 'datetime';
     }
 
     /**
@@ -50,7 +70,7 @@ class DateTransformer implements TransformerInterface
     public function transform($data, array $options)
     {
         if ($data instanceof DateTime) {
-            return $data->format('Y-m-d');
+            return $data->format('Y-m-d\TH:i:s');
         } elseif ($data === null) {
             return null;
         } else {
@@ -66,7 +86,7 @@ class DateTransformer implements TransformerInterface
         if ($data === null) {
             return null;
         } elseif (is_string($data)) {
-            return DateTime::createFromFormat('Y-m-d', $data);
+            return DateTime::createFromFormat('Y-m-d\TH:i:s', $data);
         } else {
             throw new InvalidArgumentException();
         }
