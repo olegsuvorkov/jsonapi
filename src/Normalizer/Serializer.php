@@ -97,6 +97,7 @@ class Serializer implements SerializerInterface
      */
     public function normalize($data, array $options, ContextInterface $context): array
     {
+        $meta = $options['meta'] ?? [];
         $options['meta'] = $context->getMeta();
         $structure   = [];
         $included    = [];
@@ -120,6 +121,9 @@ class Serializer implements SerializerInterface
                     $structure['included'][] = $this->normalizeIncludedResource($item, $options, $context);
                 }
             }
+        }
+        if ($meta) {
+            $structure['meta'] = $meta;
         }
         return $structure;
     }

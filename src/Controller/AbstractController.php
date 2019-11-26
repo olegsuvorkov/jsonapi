@@ -4,6 +4,7 @@ namespace JsonApi\Controller;
 
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Persistence\ManagerRegistry;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use JsonApi\Context\ContextInterface;
 use JsonApi\Metadata\UndefinedMetadataException;
 use JsonApi\Normalizer\SerializerInterface;
@@ -37,9 +38,14 @@ abstract class AbstractController extends OriginalAbstractController implements 
     {
         $context->getMetadata()->denyAccessUnlessGranted('list');
         $list = $this->getList($request, $context);
+        $meta = [];
+        if ($list instanceof Paginator) {
+            $meta['count'] = $list->count();
+        }
         return $this->serialize($list, Response::HTTP_OK, [], [
             'attributes' => true,
             'relationships' => true,
+            'meta' => $meta,
         ]);
     }
 
