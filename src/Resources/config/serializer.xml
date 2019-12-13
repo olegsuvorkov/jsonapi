@@ -73,6 +73,7 @@
             <argument type="collection"/>
             <argument type="service" id="JsonApi\Normalizer\Normalizer"/>
             <argument type="service" id="JsonApi\DataStorage\DataStorageInterface"/>
+            <argument type="service" id="JsonApi\Metadata\RegisterInterface"/>
         </service>
         <service id="JsonApi\Normalizer\SerializerInterface" alias="JsonApi\Normalizer\Serializer"/>
     </services>

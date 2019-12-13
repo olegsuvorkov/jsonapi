@@ -88,7 +88,8 @@ class RelationshipTransformer implements TransformerInterface
             [$id, $type] = Metadata::reverseRelatedTransform($data);
             /** @var MetadataInterface $metadata */
             $metadata = $options['target']->getMetadataByType($type);
-            return $storage->get($metadata, $id);
+            $item = $storage->get($metadata, $id);
+            return $item;
         } else {
             throw new InvalidArgumentException();
         }

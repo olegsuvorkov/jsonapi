@@ -5,6 +5,7 @@ namespace JsonApi\Normalizer;
 use JsonApi\Context\ContextInterface;
 use JsonApi\DataStorage\CreationDataStorage;
 use JsonApi\DataStorage\DataStorageInterface;
+use JsonApi\Metadata\RegisterInterface;
 use JsonApi\Metadata\UndefinedMetadataException;
 use JsonApi\Transformer\InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Request;
@@ -51,6 +52,11 @@ class Serializer implements SerializerInterface
     private $decode;
 
     /**
+     * @var RegisterInterface
+     */
+    private $register;
+
+    /**
      * @param NormalizerInterface[] $normalizers
      * @param NormalizerInterface $defaultNormalizer
      * @param DataStorageInterface $storage
@@ -58,8 +64,10 @@ class Serializer implements SerializerInterface
     public function __construct(
         array $normalizers,
         NormalizerInterface $defaultNormalizer,
-        DataStorageInterface $storage
+        DataStorageInterface $storage,
+        RegisterInterface $register
     ) {
+        $this->register = $register;
         $this->storage = $storage;
         $this->defaultNormalizer = $defaultNormalizer;
         $this->normalizers = [];
@@ -85,7 +93,7 @@ class Serializer implements SerializerInterface
     }
 
 
-    public function deserialize(Request $request, array $options, ContextInterface $context): array
+    public function deserialize(Request $request, array $options, ContextInterface $context)
     {
         $data = $this->decode->decode($request->getContent(), 'json');
         return $this->denormalize($data, $options, $context);
@@ -164,7 +172,7 @@ class Serializer implements SerializerInterface
     public function denormalize(array $structure, array $options, ContextInterface $context)
     {
         $storage = empty($options['allow_create']) ? $this->storage : new CreationDataStorage($this->storage);
-        $structure = array_merge(['data' => null, 'included' => null], $structure);
+        $structure = array_merge(['data' => null, 'included' => []], $structure);
         foreach ($structure as $key => $value) {
             if ($key === 'data' || $key === 'included') {
                 if (!is_array($value)) {
@@ -179,7 +187,7 @@ class Serializer implements SerializerInterface
                 $included = $structure['included'];
                 if (is_array($included)) {
                     usort($included, [$this, 'sortCallback']);
-                    $this->denormalizeResources($structure['data'], $context, $storage, $options);
+                    $this->denormalizeResources($included, $context, $storage, $options);
                 } else {
                     throw new InvalidArgumentException('Invalid included resource');
                 }
@@ -224,7 +232,7 @@ class Serializer implements SerializerInterface
     {
         if (is_array($resource)) {
             $resource = $this->validateResource($resource);
-            $metadata = $context->getByType($resource['type']);
+            $metadata = $this->register->getByType($resource['type']);
             $normalizer = $this->normalizers[$metadata->getType()] ?? $this->defaultNormalizer;
             return $normalizer->denormalize($metadata, $storage, $resource, $options);
         }

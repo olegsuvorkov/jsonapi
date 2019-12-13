@@ -188,7 +188,7 @@ class Metadata implements MetadataInterface
     {
         $id = null;
         $type = null;
-        foreach (array_merge(['type' => null], $data) as $key => $value) {
+        foreach ($data as $key => $value) {
             if ($key === 'id') {
                 if (is_string($value)) {
                     $id = $value;
@@ -202,6 +202,12 @@ class Metadata implements MetadataInterface
                     throw new InvalidArgumentException();
                 }
             }
+        }
+        if (!$id) {
+            throw new InvalidArgumentException();
+        }
+        if (!$type) {
+            throw new InvalidArgumentException();
         }
         return [$id, $type];
     }

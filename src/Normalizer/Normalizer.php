@@ -4,6 +4,8 @@ namespace JsonApi\Normalizer;
 
 use JsonApi\Metadata\MetadataInterface;
 use JsonApi\Transformer\InvalidArgumentException;
+use JsonApi\DataStorage\DataStorageInterface;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
  * @package JsonApi\Normalizer
@@ -72,9 +74,10 @@ class Normalizer implements NormalizerInterface
     /**
      * @inheritDoc
      */
-    public function denormalize(MetadataInterface $metadata, $entity, array $resource, array $options)
+    public function denormalize(MetadataInterface $metadata, DataStorageInterface $storage, array $resource, array $options)
     {
         if ($metadata->isNew($resource['id'])) {
+            $entity = $metadata->newInstanceWithoutConstructor();
             $arguments = [];
             foreach ($metadata->getConstructorArguments() as $field) {
                 if ($field->isRelationship()) {
@@ -84,10 +87,13 @@ class Normalizer implements NormalizerInterface
                 }
             }
             $metadata->invokeConstructor($entity, $arguments);
+        } else {
+            $entity = $storage->get($metadata, $resource['id']);
         }
         $this->denormalizeAttributes($metadata, $entity, $resource['attributes'], $options);
         $this->denormalizeRelationships($metadata, $entity, $resource['relationships'], $options);
         $this->denormalizeMeta($metadata, $entity, $resource['meta'], $options);
+        return $entity;
     }
 
     public function denormalizeAttributes(MetadataInterface $metadata, $entity, array $attributes, array $options)
@@ -99,7 +105,7 @@ class Normalizer implements NormalizerInterface
 
     public function denormalizeRelationships(MetadataInterface $metadata, $entity, array $relationships, array $options)
     {
-        foreach ($metadata->getDenormalizedAttributes() as $field) {
+        foreach ($metadata->getDenormalizedRelationships() as $field) {
             $field->setDenormalizeValue($entity, $relationships, $options);
         }
     }

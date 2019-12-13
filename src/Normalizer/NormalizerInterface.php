@@ -4,6 +4,7 @@ namespace JsonApi\Normalizer;
 
 use JsonApi\Metadata\MetadataInterface;
 use JsonApi\Transformer\InvalidArgumentException;
+use JsonApi\DataStorage\DataStorageInterface;
 
 /**
  * @package JsonApi\Normalizer
@@ -21,10 +22,10 @@ interface NormalizerInterface
 
     /**
      * @param MetadataInterface $metadata
-     * @param $entity
+     * @param DataStorageInterface $storage
      * @param array $resource
      * @param array $context
      * @return mixed
      */
-    public function denormalize(MetadataInterface $metadata, $entity, array $resource, array $context);
+    public function denormalize(MetadataInterface $metadata, DataStorageInterface $storage, array $resource, array $context);
 }

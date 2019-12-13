@@ -177,6 +177,8 @@ abstract class AbstractController extends OriginalAbstractController implements 
             throw new BadRequestHttpException();
         }
         $em = $metadata->getEntityManager();
+//        dump($entity);
+//        throw new BadRequestHttpException();
         $em->persist($entity);
         $em->flush();
         return $this->serialize($entity, Response::HTTP_CREATED, [

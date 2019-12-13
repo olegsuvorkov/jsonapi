@@ -6,6 +6,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\MappingException;
 use JsonApi\Transformer\InvalidArgumentException;
 use JsonApi\Transformer\TransformerInterface;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
  * @package JsonApi\Metadata\Field
