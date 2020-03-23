@@ -12,6 +12,7 @@
             <argument type="string"/>
             <argument type="string"/>
             <argument type="collection"/>
+            <tag name="routing.loader"/>
         </service>
         <service id="JsonApi\Router\ApiUrlGeneratorInterface" alias="JsonApi\Router\RouteLoader"/>
     </services>
