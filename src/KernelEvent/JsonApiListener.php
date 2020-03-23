@@ -126,7 +126,7 @@ class JsonApiListener implements EventSubscriberInterface
         if (!in_array(SerializerInterface::FORMAT, $request->getAcceptableContentTypes())) {
             return;
         }
-        $exception = $event->getException();
+        $exception = $event->getThrowable();
         if ($exception instanceof HttpException || $exception instanceof Exception) {
             $errors = ['title' => $exception->getMessage()];
             if ($exception instanceof HttpException) {
