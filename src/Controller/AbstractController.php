@@ -9,6 +9,7 @@ use JsonApi\Context\ContextInterface;
 use JsonApi\Metadata\UndefinedMetadataException;
 use JsonApi\Normalizer\SerializerInterface;
 use JsonApi\Transformer\InvalidArgumentException;
+use JsonApi\Repository\FilterRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController as OriginalAbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ContainerBagInterface;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -21,7 +22,6 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
-use Vision\SystemBundle\Repository\FilterRepositoryInterface;
 
 /**
  * @package JsonApi\Controller

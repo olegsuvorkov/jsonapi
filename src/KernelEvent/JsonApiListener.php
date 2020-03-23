@@ -20,7 +20,7 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
 /**
- * @package Vision\SystemBundle\KernelEvent
+ * @package JsonApi\KernelEvent
  */
 class JsonApiListener implements EventSubscriberInterface
 {
