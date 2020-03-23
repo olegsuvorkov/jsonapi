@@ -205,7 +205,7 @@ abstract class AbstractController extends OriginalAbstractController implements 
         $em = $metadata->getEntityManager();
         $em->remove($item);
         $em->flush();
-        return $this->serialize('', Response::HTTP_NO_CONTENT, [], [
+        return $this->json('', Response::HTTP_NO_CONTENT, [], [
             'attributes' => true,
             'relationships' => true,
         ]);
