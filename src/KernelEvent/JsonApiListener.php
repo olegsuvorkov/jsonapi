@@ -9,6 +9,7 @@ use JsonApi\Exception\ParseUrlException;
 use JsonApi\Metadata\ContextRegisterFactory;
 use JsonApi\Metadata\UndefinedMetadataException;
 use JsonApi\Normalizer\SerializerInterface;
+use JsonApi\Router\RouteLoader;
 use Symfony\Component\Debug\Exception\FlattenException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -71,6 +72,9 @@ class JsonApiListener implements EventSubscriberInterface
         if ($request->attributes->get('exception') instanceof FlattenException) {
             return;
         }
+        if (!$request->attributes->get(RouteLoader::ATTRIBUTE, false)) {
+            return;
+        }
         if (0 !== strncmp($request->getPathInfo(), $this->prefix, strlen($this->prefix))) {
             return;
         }
@@ -123,6 +127,9 @@ class JsonApiListener implements EventSubscriberInterface
     public function onKernelException(ExceptionEvent $event)
     {
         $request = $event->getRequest();
+        if (!$request->attributes->get(RouteLoader::ATTRIBUTE, false)) {
+            return;
+        }
         if (!in_array(SerializerInterface::FORMAT, $request->getAcceptableContentTypes())) {
             return;
         }

@@ -9,6 +9,11 @@
         }
     },
     "require": {
-        "symfony/yaml": ">=4.3"
+        "symfony/yaml": ">=4.3",
+        "symfony/framework-bundle": ">=4.3",
+        "symfony/security": ">=4.3",
+        "symfony/form": ">=4.3",
+        "symfony/translation": ">=4.3",
+        "symfony/orm-pack": "^1.0"
     }
 }

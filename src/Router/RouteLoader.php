@@ -20,6 +20,8 @@ class RouteLoader extends Loader implements ApiUrlGeneratorInterface, RouteLoade
     const ENTITY_PATH        = '/{id}';
     const RELATIONSHIPS_PATH = '/{id}/relationships/{relationship}';
 
+    const ATTRIBUTE = '_json_api';
+
     private $isLoaded = false;
 
     /**
@@ -154,7 +156,7 @@ class RouteLoader extends Loader implements ApiUrlGeneratorInterface, RouteLoade
                         $this->name.$type.'_'.$name,
                         new Route(
                             $this->path.$type.$path,
-                            ['_controller' => $serviceId.'::'.$action, 'type' => $type],
+                            ['_controller' => $serviceId.'::'.$action, 'type' => $type, self::ATTRIBUTE => true],
                             $requirements,
                             $this->options,
                             $this->host,
